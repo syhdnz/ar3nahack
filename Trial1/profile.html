@@ -1,0 +1,2123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>TimeBank AI — Profile</title>
+    <meta
+      name="description"
+      content="Your TimeBank AI profile – manage bio, skills, availability, and reputation."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --primary: #2563eb;
+        --primary-light: rgba(37, 99, 235, 0.15);
+        --secondary: #10b981;
+        --accent: #f59e0b;
+        --danger: #ef4444;
+        --bg: #0b1220;
+        --surface: #111827;
+        --surface2: #1f2937;
+        --surface3: #374151;
+        --text: #f9fafb;
+        --muted: #9ca3af;
+        --border: rgba(255, 255, 255, 0.07);
+        --sidebar-w: 260px;
+        --topbar-h: 64px;
+        --radius: 12px;
+        --radius-sm: 8px;
+        --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+        --trans: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        overflow-x: hidden;
+      }
+      a {
+        color: var(--primary);
+      }
+      button {
+        font-family: inherit;
+        cursor: pointer;
+        border: none;
+        background: none;
+      }
+      ::-webkit-scrollbar {
+        width: 5px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--surface);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--surface3);
+        border-radius: 3px;
+      }
+      #authGuard {
+        position: fixed;
+        inset: 0;
+        background: var(--bg);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 16px;
+      }
+      #authGuard.hidden {
+        display: none;
+      }
+      .guard-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid var(--surface3);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .guard-text {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .sidebar {
+        width: var(--sidebar-w);
+        min-height: 100vh;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        padding: 24px 0;
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 100;
+        transition: transform 0.3s ease;
+      }
+      .sidebar-logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 20px 28px;
+        border-bottom: 1px solid var(--border);
+      }
+      .logo-mark {
+        width: 36px;
+        height: 36px;
+        background: var(--primary);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        flex-shrink: 0;
+        box-shadow: 0 0 16px rgba(37, 99, 235, 0.4);
+      }
+      .logo-text {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 17px;
+      }
+      .logo-text span {
+        color: var(--primary);
+      }
+      .sidebar-section {
+        padding: 20px 12px 8px;
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 16px;
+        margin: 2px 8px;
+        border-radius: var(--radius-sm);
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 500;
+        transition: var(--trans);
+        cursor: pointer;
+        text-decoration: none;
+      }
+      .nav-item:hover {
+        background: var(--surface2);
+        color: var(--text);
+      }
+      .nav-item.active {
+        background: var(--primary-light);
+        color: var(--primary);
+      }
+      .nav-item.active .nav-icon {
+        color: var(--primary);
+      }
+      .nav-icon {
+        font-size: 18px;
+        flex-shrink: 0;
+        width: 20px;
+        text-align: center;
+      }
+      .sidebar-bottom {
+        margin-top: auto;
+        padding: 16px 8px 0;
+        border-top: 1px solid var(--border);
+      }
+      .user-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: var(--trans);
+      }
+      .user-card:hover {
+        background: var(--surface2);
+      }
+      .user-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 700;
+        color: #fff;
+        text-transform: uppercase;
+      }
+      .user-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .user-name {
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .user-role {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .user-menu-icon {
+        color: var(--muted);
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+      .topbar {
+        height: var(--topbar-h);
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        padding: 0 28px;
+        gap: 16px;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      }
+      .topbar-title {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 600;
+        font-size: 18px;
+        flex: 1;
+      }
+      .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .icon-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: var(--radius-sm);
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        cursor: pointer;
+        transition: var(--trans);
+        position: relative;
+      }
+      .icon-btn:hover {
+        background: var(--surface3);
+        border-color: var(--primary);
+      }
+      .notif-dot {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 7px;
+        height: 7px;
+        background: var(--primary);
+        border-radius: 50%;
+        border: 2px solid var(--surface);
+      }
+      .credits-pill {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        background: var(--primary-light);
+        border: 1px solid rgba(37, 99, 235, 0.3);
+        border-radius: 99px;
+        padding: 6px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--primary);
+      }
+      .credits-icon {
+        font-size: 15px;
+      }
+      .main-wrap {
+        margin-left: var(--sidebar-w);
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+      .page-content {
+        padding: 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+        flex: 1;
+      }
+      .hero {
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(
+          135deg,
+          rgba(37, 99, 235, 0.12),
+          rgba(16, 185, 129, 0.08)
+        );
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: var(--radius);
+        padding: 40px 48px;
+        margin-bottom: 24px;
+      }
+      .hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          270deg,
+          #2563eb22,
+          #10b98122,
+          #f59e0b11,
+          #0b122000
+        );
+        background-size: 400% 400%;
+        animation: mesh 8s ease infinite;
+      }
+      @keyframes mesh {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+      .hero-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        flex-wrap: wrap;
+      }
+      .avatar-wrapper {
+        position: relative;
+        width: 96px;
+        height: 96px;
+        flex-shrink: 0;
+      }
+      .avatar {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 3px solid;
+        border-image: linear-gradient(var(--primary), var(--secondary)) 1;
+        object-fit: cover;
+        transition: transform 0.2s;
+      }
+      .avatar:hover {
+        transform: scale(1.04);
+      }
+      .avatar-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 24px;
+        opacity: 0;
+        transition: opacity 0.2s;
+        cursor: pointer;
+      }
+      .avatar-wrapper:hover .avatar-overlay {
+        opacity: 1;
+      }
+      .online-dot {
+        position: absolute;
+        bottom: 4px;
+        right: 4px;
+        width: 12px;
+        height: 12px;
+        background: #10b981;
+        border: 2px solid #fff;
+        border-radius: 50%;
+      }
+      .hero-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .hero-name {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--text);
+      }
+      .hero-handle {
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .level-badge {
+        display: inline-block;
+        background: var(--secondary);
+        color: #fff;
+        padding: 4px 8px;
+        border-radius: 99px;
+        font-size: 13px;
+        margin-left: 8px;
+      }
+      .hero-pills {
+        display: flex;
+        gap: 12px;
+        margin-top: 12px;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 6px 12px;
+        font-size: 13px;
+        color: var(--text);
+      }
+      .grid-3col {
+        display: grid;
+        grid-template-columns: 1fr 2fr 1fr;
+        gap: 24px;
+      }
+      @media (max-width: 768px) {
+        .grid-3col {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        opacity: 0;
+        transform: translateY(20px);
+        transition:
+          opacity 0.5s ease,
+          transform 0.5s ease;
+      }
+      .card.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .bio-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .bio-edit {
+        background: none;
+        color: var(--primary);
+        font-size: 16px;
+        cursor: pointer;
+      }
+      .bio-text {
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--text);
+        white-space: pre-wrap;
+      }
+      .bio-placeholder {
+        color: var(--muted);
+        font-style: italic;
+      }
+      .bio-textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 8px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface2);
+        color: var(--text);
+        font-family: inherit;
+      }
+      .char-counter {
+        font-size: 12px;
+        color: var(--muted);
+        text-align: right;
+        margin-top: 4px;
+      }
+      .btn-primary {
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
+        color: #fff;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: var(--trans);
+      }
+      .btn-primary:hover {
+        box-shadow: 0 0 20px rgba(37, 99, 235, 0.4);
+      }
+      .btn-save {
+        background: var(--secondary);
+      }
+      .btn-cancel {
+        background: var(--danger);
+      }
+      .skills-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .skill-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(37, 99, 235, 0.15);
+        border: 1px solid rgba(37, 99, 235, 0.3);
+        color: #60a5fa;
+        border-radius: 20px;
+        padding: 4px 12px;
+        font-size: 12px;
+        transition: background 0.15s;
+      }
+      .skill-tag:hover {
+        background: rgba(37, 99, 235, 0.25);
+      }
+      .skill-remove {
+        cursor: pointer;
+        font-weight: 600;
+        margin-left: 4px;
+      }
+      .skill-input {
+        border: none;
+        background: transparent;
+        color: var(--text);
+        font-size: 12px;
+        outline: none;
+        width: auto;
+        min-width: 80px;
+      }
+      .skill-input::placeholder {
+        color: var(--muted);
+      }
+      .xp-card .xp-value {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--text);
+      }
+      .xp-bar {
+        height: 10px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        overflow: hidden;
+        margin: 12px 0;
+      }
+      .xp-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
+        width: 0%;
+        transition: width 1.4s ease-out;
+      }
+      .xp-details {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .trust-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .trust-svg {
+        width: 120px;
+        height: 120px;
+      }
+      .trust-text {
+        font-size: 22px;
+        font-weight: 800;
+        margin-top: 8px;
+      }
+      .trust-sub {
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 4px;
+      }
+      .badges-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+      .badge {
+        text-align: center;
+        padding: 12px;
+        border-radius: var(--radius-sm);
+        border: 2px solid transparent;
+        transition:
+          transform 0.3s,
+          box-shadow 0.3s;
+      }
+      .badge.locked {
+        opacity: 0.4;
+        filter: grayscale(1);
+      }
+      .badge.unlocked {
+        opacity: 1;
+        cursor: pointer;
+      }
+      .badge-icon {
+        font-size: 36px;
+        margin-bottom: 8px;
+      }
+      .badge-name {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .badge-xp {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+      }
+      .cal-day {
+        font-size: 12px;
+        text-align: center;
+        color: var(--muted);
+      }
+      .cal-cell {
+        position: relative;
+        padding: 6px;
+        border-radius: 4px;
+        cursor: pointer;
+        background: var(--surface2);
+        color: var(--text);
+        font-size: 13px;
+      }
+      .cal-cell.past {
+        color: var(--muted);
+        cursor: not-allowed;
+        background: none;
+      }
+      .cal-cell:hover:not(.past) {
+        background: var(--surface3);
+      }
+      .cal-dot {
+        position: absolute;
+        bottom: 4px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 6px;
+        height: 6px;
+        background: #10b981;
+        border-radius: 50%;
+      }
+      .slot-row {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+        overflow-x: auto;
+      }
+      .slot {
+        flex: none;
+        padding: 4px 8px;
+        border-radius: 8px;
+        font-size: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .slot.selected {
+        background: var(--primary);
+        color: #fff;
+      }
+      .slot:hover:not(.selected) {
+        background: var(--surface3);
+      }
+      .cal-summary {
+        margin-top: 12px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .wallet-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 8px 0;
+      }
+      .wallet-label {
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .wallet-value {
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--text);
+      }
+      .wallet-link {
+        font-size: 13px;
+        color: var(--primary);
+        margin-top: 8px;
+        display: inline-block;
+      }
+      .actions-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .action-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--surface2);
+        padding: 10px 14px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: var(--trans);
+      }
+      .action-item:hover {
+        background: var(--primary-light);
+        border-left: 3px solid var(--primary);
+      }
+      .action-icon {
+        font-size: 18px;
+        margin-right: 8px;
+      }
+      .timeline-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .timeline-item:last-child {
+        border-bottom: none;
+      }
+      .timeline-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--primary);
+      }
+      .timeline-content {
+        flex: 1;
+      }
+      .timeline-msg {
+        font-size: 14px;
+        color: var(--text);
+      }
+      .timeline-time {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .view-all {
+        font-size: 13px;
+        color: var(--primary);
+        margin-top: 8px;
+        display: inline-block;
+      }
+      .ratings-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .avg-rating {
+        font-size: 48px;
+        font-weight: 800;
+        color: var(--text);
+      }
+      .star-row {
+        display: flex;
+        align-items: center;
+      }
+      .star {
+        width: 20px;
+        height: 20px;
+        stroke: var(--primary);
+        fill: none;
+      }
+      .star.filled {
+        fill: var(--primary);
+      }
+      .rating-count {
+        font-size: 13px;
+        color: var(--muted);
+        margin-left: 8px;
+      }
+      .dist-bar {
+        display: flex;
+        align-items: center;
+        margin: 4px 0;
+      }
+      .dist-label {
+        width: 30px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .dist-track {
+        flex: 1;
+        height: 8px;
+        background: var(--surface2);
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 0 8px;
+      }
+      .dist-fill {
+        height: 100%;
+        background: var(--primary);
+        width: 0%;
+      }
+      .dist-percent {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .review-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .review-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-weight: 600;
+      }
+      .review-content {
+        flex: 1;
+      }
+      .review-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .review-stars {
+        display: flex;
+        margin: 4px 0;
+      }
+      .review-text {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .review-date {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .toast {
+        position: fixed;
+        bottom: 28px;
+        right: 28px;
+        background: var(--secondary);
+        border-left: 4px solid var(--primary);
+        border-radius: 10px;
+        padding: 14px 20px;
+        font-size: 13px;
+        color: #fff;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        z-index: 10000;
+        opacity: 0;
+        transform: translateY(20px);
+        pointer-events: none;
+        transition:
+          opacity 0.3s,
+          transform 0.3s;
+        max-width: 300px;
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      @media (max-width: 1200px) {
+        .grid-3col {
+          grid-template-columns: 1fr 2fr;
+        }
+      }
+      @media (max-width: 900px) {
+        .sidebar {
+          transform: translateX(-100%);
+        }
+        .sidebar.open {
+          transform: translateX(0);
+        }
+        .main-wrap {
+          margin-left: 0;
+        }
+        #menuToggle {
+          display: flex;
+        }
+      }
+      @media (max-width: 768px) {
+        .grid-3col {
+          grid-template-columns: 1fr;
+        }
+      }
+      .fade-up {
+        opacity: 0;
+        transform: translateY(14px);
+        animation: fade 0.4s ease-out forwards;
+      }
+      @keyframes fade {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .delay-1 {
+        animation-delay: 0.05s;
+      }
+      .delay-2 {
+        animation-delay: 0.1s;
+      }
+      .delay-3 {
+        animation-delay: 0.15s;
+      }
+      .delay-4 {
+        animation-delay: 0.2s;
+      }
+      .delay-5 {
+        animation-delay: 0.25s;
+      }
+      .delay-6 {
+        animation-delay: 0.3s;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="authGuard" role="status" aria-live="polite">
+      <div class="guard-spinner"></div>
+      <p class="guard-text">Checking session…</p>
+    </div>
+    <div class="toast" id="toast" role="alert" aria-live="polite"></div>
+    <div class="profile-dropdown" id="profileDropdown" role="menu">
+      <div class="dropdown-item" id="ddProfile" role="menuitem" tabindex="0">
+        <span class="dropdown-icon">👤</span> View Profile
+      </div>
+      <div class="dropdown-item" role="menuitem" tabindex="0">
+        <span class="dropdown-icon">⚙️</span> Settings
+      </div>
+      <div class="dropdown-item" role="menuitem" tabindex="0">
+        <span class="dropdown-icon">🎁</span> Refer a Friend
+      </div>
+      <div class="dropdown-divider"></div>
+      <div
+        class="dropdown-item danger"
+        id="ddSignOut"
+        role="menuitem"
+        tabindex="0"
+      >
+        <span class="dropdown-icon">↩</span> Sign Out
+      </div>
+    </div>
+    <aside class="sidebar" id="sidebar" aria-label="Navigation">
+      <div class="sidebar-logo">
+        <div class="logo-mark">⏱</div>
+        <div class="logo-text">Time<span>Bank</span> AI</div>
+      </div>
+      <div class="sidebar-section">Main</div>
+      <a href="dashboard.html" class="nav-item" id="navDashboard"
+        ><span class="nav-icon">🏠</span> Dashboard</a
+      ><a href="profile.html" class="nav-item active" id="navProfile"
+        ><span class="nav-icon">👤</span> Profile</a
+      ><a href="services.html" class="nav-item" id="navServices"
+        ><span class="nav-icon">🛠️</span> Services</a
+      ><a href="wallet.html" class="nav-item" id="navWallet"
+        ><span class="nav-icon">💰</span> Wallet</a
+      ><a href="chat.html" class="nav-item" id="navChat"
+        ><span class="nav-icon">💬</span> Chat</a
+      ><a href="schedule.html" class="nav-item" id="navSchedule"
+        ><span class="nav-icon">📅</span> Schedule</a
+      ><a href="settings.html" class="nav-item" id="navSettings"
+        ><span class="nav-icon">⚙️</span> Settings</a
+      >
+      <div class="sidebar-bottom">
+        <div
+          class="user-card"
+          id="userCard"
+          role="button"
+          tabindex="0"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-label="User menu"
+        >
+          <div class="user-avatar" id="userAvatarSidebar">?</div>
+          <div class="user-info">
+            <div class="user-name" id="userNameSidebar">Loading…</div>
+            <div class="user-role">TimeBank Member</div>
+          </div>
+          <span class="user-menu-icon">⋯</span>
+        </div>
+      </div>
+    </aside>
+    <div class="main-wrap" id="mainWrap">
+      <header class="topbar">
+        <button
+          class="icon-btn"
+          id="menuToggle"
+          aria-label="Toggle sidebar"
+          aria-expanded="false"
+          aria-controls="sidebar"
+        >
+          ☰
+        </button>
+        <h1 class="topbar-title" data-i18n="prof_title">My Profile</h1>
+        <div class="topbar-actions">
+          <div
+            class="credits-pill"
+            id="creditsPill"
+            aria-label="Time credits balance"
+          >
+            <span class="credits-icon">⏱</span
+            ><span id="creditsDisplay">—</span> credits
+          </div>
+          <button
+            class="icon-btn"
+            id="notifBtn"
+            aria-label="Notifications"
+            aria-haspopup="true"
+          >
+            🔔<span class="notif-dot"></span>
+          </button>
+        </div>
+      </header>
+      <main class="page-content" id="pageContent" aria-label="Profile content">
+        <section class="hero fade-up delay-1">
+          <div class="hero-row">
+            <div class="avatar-wrapper">
+              <img src="" alt="Avatar" class="avatar" id="avatarImg" />
+              <div class="avatar-overlay" id="avatarOverlay">📷</div>
+              <div class="online-dot"></div>
+              <input
+                type="file"
+                accept="image/*"
+                id="avatarInput"
+                style="display: none"
+              />
+            </div>
+            <div class="hero-info">
+              <div class="hero-name" id="heroName">Loading…</div>
+              <div class="hero-handle" id="heroHandle">@loading</div>
+              <div class="level-badge" id="heroLevel">Lv. 1 — Newcomer</div>
+              <div class="join-date" id="heroJoin">Member since —</div>
+            </div>
+            <button class="edit-btn" id="editProfileBtn" data-i18n="prof_edit">
+              Edit Profile
+            </button>
+          </div>
+          <div class="hero-pills">
+            <div class="pill" id="pillServices">— Services Completed</div>
+            <div class="pill" id="pillCredits">— Credits Earned</div>
+            <div class="pill" id="pillTrust">—% Trust Score</div>
+          </div>
+        </section>
+        <section class="grid-3col">
+          <div class="left-col">
+            <div class="card bio-card fade-up delay-2" id="bioCard">
+              <div class="bio-title">
+                <span data-i18n="prof_bio_title">About Me</span
+                ><button class="bio-edit" id="bioEditBtn">✏️</button>
+              </div>
+              <div class="bio-content" id="bioContent">
+                <p class="bio-text" id="bioText"></p>
+                <p
+                  class="bio-placeholder"
+                  id="bioPlaceholder"
+                  data-i18n="prof_bio_empty"
+                >
+                  No bio yet.
+                </p>
+              </div>
+              <div class="bio-actions" id="bioActions" style="display: none">
+                <textarea
+                  class="bio-textarea"
+                  id="bioTextarea"
+                  maxlength="300"
+                ></textarea>
+                <div class="char-counter" id="bioCharCount">0 / 300</div>
+                <div class="bio-actions">
+                  <button
+                    class="btn-primary"
+                    id="aiGenerateBtn"
+                    data-i18n="prof_ai_btn"
+                  >
+                    ✦ Generate with AI</button
+                  ><button
+                    class="btn-primary btn-save"
+                    id="bioSaveBtn"
+                    data-i18n="prof_save"
+                  >
+                    Save</button
+                  ><button
+                    class="btn-primary btn-cancel"
+                    id="bioCancelBtn"
+                    data-i18n="prof_cancel"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="card skills-card fade-up delay-3" id="skillsCard">
+              <div class="skills-title">
+                <span data-i18n="prof_skills_title">My Skills</span
+                ><button class="bio-edit" id="skillAddBtn">+</button>
+              </div>
+              <div class="skills-list" id="skillsList"></div>
+              <input
+                type="text"
+                class="skill-input"
+                id="skillInput"
+                placeholder="Add skill…"
+                style="display: none"
+              />
+            </div>
+            <div class="card wallet-card fade-up delay-4" id="walletCard">
+              <div class="bio-title" data-i18n="prof_wallet_title">
+                Wallet Summary
+              </div>
+              <div class="wallet-row">
+                <span class="wallet-label" data-i18n="prof_wallet_available"
+                  >Available Credits</span
+                ><span class="wallet-value" id="walletCredits">—</span>
+              </div>
+              <div class="wallet-row">
+                <span class="wallet-label" data-i18n="prof_wallet_escrow"
+                  >In Escrow</span
+                ><span class="wallet-value" id="walletEscrow">—</span>
+              </div>
+              <div class="wallet-row">
+                <span class="wallet-label" data-i18n="prof_wallet_earned"
+                  >Total Earned</span
+                ><span class="wallet-value" id="walletEarned">—</span>
+              </div>
+              <a
+                href="wallet.html"
+                class="wallet-link"
+                data-i18n="prof_wallet_view"
+                >View full wallet →</a
+              >
+            </div>
+          </div>
+          <div class="center-col">
+            <div class="card stats-card fade-up delay-2" id="statsCard">
+              <div class="bio-title" data-i18n="prof_xp_title">
+                Experience Points
+              </div>
+              <div class="xp-value" id="xpValue">—</div>
+              <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+              <div class="xp-details">
+                <span id="xpCurrent">— XP</span
+                ><span id="xpNext">— XP to next level</span>
+              </div>
+              <div class="level-badge" id="xpLevelBadge">Lv. 1 — Newcomer</div>
+            </div>
+            <div class="card trust-card fade-up delay-3" id="trustCard">
+              <svg class="trust-svg" viewBox="0 0 120 120">
+                <circle
+                  cx="60"
+                  cy="60"
+                  r="50"
+                  stroke="rgba(255,255,255,0.08)"
+                  stroke-width="10"
+                  fill="none"
+                />
+                <circle
+                  cx="60"
+                  cy="60"
+                  r="50"
+                  stroke="#10B981"
+                  stroke-width="10"
+                  fill="none"
+                  stroke-dasharray="314.16"
+                  stroke-dashoffset="314.16"
+                  id="trustArc"
+                />
+              </svg>
+              <div class="trust-text" id="trustScore">—%</div>
+              <div class="trust-sub" data-i18n="prof_trust_title">
+                Trust Score
+              </div>
+            </div>
+            <div class="card badges-card fade-up delay-4" id="badgesCard">
+              <div class="bio-title" data-i18n="prof_badges_title">
+                Achievement Badges
+              </div>
+              <div class="badges-grid" id="badgesGrid"></div>
+            </div>
+            <div class="card calendar-card fade-up delay-5" id="calendarCard">
+              <div class="calendar-header">
+                <div class="bio-title" data-i18n="prof_cal_title">
+                  My Availability
+                </div>
+                <div class="bio-sub" data-i18n="prof_cal_sub">
+                  Select time slots when you're free
+                </div>
+              </div>
+              <div class="calendar-grid" id="calendarGrid"></div>
+              <div class="cal-summary" id="calSummary"></div>
+            </div>
+          </div>
+          <div class="right-col">
+            <div class="card actions-card fade-up delay-2" id="actionsCard">
+              <div class="bio-title" data-i18n="prof_actions_title">
+                Quick Actions
+              </div>
+              <div class="actions-list">
+                <div
+                  class="action-item"
+                  data-href="services.html"
+                  data-i18n="prof_action_post"
+                >
+                  <span class="action-icon">📝</span><span>Post a Service</span>
+                </div>
+                <div
+                  class="action-item"
+                  data-href="services.html#matches"
+                  data-i18n="prof_action_browse"
+                >
+                  <span class="action-icon">🔎</span><span>Browse Matches</span>
+                </div>
+                <div
+                  class="action-item"
+                  data-href="schedule.html"
+                  data-i18n="prof_action_schedule"
+                >
+                  <span class="action-icon">📅</span><span>View Schedule</span>
+                </div>
+                <div
+                  class="action-item"
+                  data-href="wallet.html"
+                  data-i18n="prof_action_wallet"
+                >
+                  <span class="action-icon">💰</span><span>Open Wallet</span>
+                </div>
+                <div
+                  class="action-item"
+                  data-href="chat.html"
+                  data-i18n="prof_action_chat"
+                >
+                  <span class="action-icon">💬</span
+                  ><span>Message Someone</span>
+                </div>
+              </div>
+            </div>
+            <div class="card timeline-card fade-up delay-3" id="timelineCard">
+              <div class="bio-title" data-i18n="prof_activity_title">
+                Recent Activity
+              </div>
+              <div id="timelineList"></div>
+              <a
+                href="activity.html"
+                class="view-all"
+                data-i18n="prof_activity_title"
+                >View all activity →</a
+              >
+            </div>
+          </div>
+        </section>
+        <section class="card ratings-card fade-up delay-6" id="ratingsCard">
+          <div class="ratings-header">
+            <div class="avg-rating" id="avgRating">—</div>
+            <div class="star-row" id="starRow"></div>
+            <div class="rating-count" id="ratingCount"></div>
+          </div>
+          <div class="dist-bars" id="distBars"></div>
+          <div class="reviews-list" id="reviewsList"></div>
+        </section>
+      </main>
+    </div>
+    <script>
+      const $ = (i) => document.getElementById(i),
+        $$ = (s) => document.querySelectorAll(s),
+        SESSION_KEY = "timebankSession",
+        getSession = () =>
+          JSON.parse(localStorage.getItem(SESSION_KEY) || "{}"),
+        updateSession = (p) => {
+          const s = getSession();
+          const u = { ...s, ...p };
+          localStorage.setItem(SESSION_KEY, JSON.stringify(u));
+          return u;
+        },
+        logout = () => {
+          localStorage.removeItem(SESSION_KEY);
+          window.location.href = "index.html";
+        };
+      function showToast(m, t = "success") {
+        const el = $("toast");
+        el.textContent = m;
+        el.style.borderLeftColor = {
+          success: "#10B981",
+          error: "#EF4444",
+          info: "#2563EB",
+        }[t];
+        el.classList.add("show");
+        setTimeout(() => el.classList.remove("show"), 2500);
+      }
+      const TRANSLATIONS = {
+        en: {
+          prof_title: "My Profile",
+          prof_edit: "Edit Profile",
+          prof_save: "Save Changes",
+          prof_cancel: "Cancel",
+          prof_bio_title: "About Me",
+          prof_bio_empty: "No bio yet.",
+          prof_ai_btn: "✦ Generate with AI",
+          prof_skills_title: "My Skills",
+          prof_skill_max: "Maximum 20 skills reached",
+          prof_xp_title: "Experience Points",
+          prof_trust_title: "Trust Score",
+          prof_badges_title: "Achievement Badges",
+          prof_cal_title: "My Availability",
+          prof_cal_sub: "Select time slots when you are free",
+          prof_wallet_title: "Wallet Summary",
+          prof_wallet_available: "Available Credits",
+          prof_wallet_escrow: "In Escrow",
+          prof_wallet_earned: "Total Earned",
+          prof_wallet_view: "View full wallet →",
+          prof_actions_title: "Quick Actions",
+          prof_action_post: "Post a Service",
+          prof_action_browse: "Browse Matches",
+          prof_action_schedule: "View Schedule",
+          prof_action_wallet: "Open Wallet",
+          prof_action_chat: "Message Someone",
+          prof_activity_title: "Recent Activity",
+          prof_ratings_title: "Ratings & Reviews",
+          prof_ratings_empty: "No ratings yet. Complete your first service.",
+          prof_member_since: "Member since",
+          prof_services_done: "Services Completed",
+          prof_credits_earned: "Credits Earned",
+          prof_photo_updated: "Profile photo updated ✓",
+          prof_bio_saved: "Bio updated ✓",
+          prof_skill_max: "Maximum 20 skills reached",
+        },
+        hi: {
+          prof_title: "मेरी प्रोफ़ाइल",
+          prof_edit: "प्रोफ़ाइल संपादित करें",
+          prof_save: "परिवर्तन सहेजें",
+          prof_cancel: "रद्द करें",
+          prof_bio_title: "मेरे बारे में",
+          prof_bio_empty: "अभी तक कोई परिचय नहीं।",
+          prof_ai_btn: "✦ AI से उत्पन्न करें",
+          prof_skills_title: "मेरे कौशल",
+          prof_skill_max: "अधिकतम 20 कौशल की सीमा",
+          prof_xp_title: "अनुभव अंक",
+          prof_trust_title: "विश्वास स्कोर",
+          prof_badges_title: "उपलब्धि बैज",
+          prof_cal_title: "मेरी उपलब्धता",
+          prof_cal_sub: "समय स्लॉट चुनें जब आप उपलब्ध हों",
+          prof_wallet_title: "वॉलेट सारांश",
+          prof_wallet_available: "उपलब्ध क्रेडिट",
+          prof_wallet_escrow: "एस्क्रो में",
+          prof_wallet_earned: "कुल अर्जित",
+          prof_wallet_view: "पूर्ण वॉलेट देखें →",
+          prof_actions_title: "त्वरित क्रियाएं",
+          prof_action_post: "सेवा पोस्ट करें",
+          prof_action_browse: "मैच ब्राउज़ करें",
+          prof_action_schedule: "शेड्यूल देखें",
+          prof_action_wallet: "वॉलेट खोलें",
+          prof_action_chat: "किसी को संदेश करें",
+          prof_activity_title: "हाल की गतिविधि",
+          prof_ratings_title: "रेटिंग और समीक्षाएं",
+          prof_ratings_empty:
+            "अभी तक कोई रेटिंग नहीं। अपनी पहली सेवा पूरी करें।",
+          prof_member_since: "सदस्य बने",
+          prof_services_done: "सेवाएं पूर्ण",
+          prof_credits_earned: "क्रेडिट अर्जित",
+          prof_photo_updated: "प्रोफ़ाइल फ़ोटो नवीकृत ✓",
+          prof_bio_saved: "परिचय नवीकृत ✓",
+          prof_skill_max: "अधिकतम 20 कौशल की सीमा",
+        },
+        kn: {
+          prof_title: "ನನ್ನ ಪ್ರೊಫೈಲ್",
+          prof_edit: "ಪ್ರೊಫೈಲ್ ಸಂಪಾದಿಸಿ",
+          prof_save: "ಬದಲಾವಣೆಗಳನ್ನು ಉಳಿಸಿ",
+          prof_cancel: "ರದ್ದು ಮಾಡಿ",
+          prof_bio_title: "ನನ್ನ ಬಗ್ಗೆ",
+          prof_bio_empty: "ಇನ್ನೂ ಪರಿಚಯ ಇಲ್ಲ.",
+          prof_ai_btn: "✦ AI ಯಿಂದ ರಚಿಸಿ",
+          prof_skills_title: "ನನ್ನ ಕೌಶಲಗಳು",
+          prof_skill_max: "ಗರಿಷ್ಠ 20 ಕೌಶಲಗಳ ಮಿತಿ",
+          prof_xp_title: "ಅನುಭವ ಅಂಕಗಳು",
+          prof_trust_title: "ವಿಶ್ವಾಸ ಸ್ಕೋರ್",
+          prof_badges_title: "ಸಾಧನೆ ಬ್ಯಾಡ್ಜ್ಗಳು",
+          prof_cal_title: "ನನ್ನ ಲಭ್ಯತೆ",
+          prof_cal_sub: "ನೀವು ಮುಕ್ತವಾಗಿರುವ ಸಮಯ ಸ್ಲಾಟ್ಗಳನ್ನು ಆಯ್ಕೆ ಮಾಡಿ",
+          prof_wallet_title: "ವಾಲೆಟ್ ಸಾರಾಂಶ",
+          prof_wallet_available: "ಲಭ್ಯ ಕ್ರೆಡಿಟ್ಗಳು",
+          prof_wallet_escrow: "ಎಸ್ಕ್ರೋದಲ್ಲಿ",
+          prof_wallet_earned: "ಒಟ್ಟು ಗಳಿಸಿದ",
+          prof_wallet_view: "ಪೂರ್ಣ ವಾಲೆಟ್ ನೋಡಿ →",
+          prof_actions_title: "ತ್ವರಿತ ಕ್ರಿಯೆಗಳು",
+          prof_action_post: "ಸೇವೆ ಪೋಸ್ಟ್ ಮಾಡಿ",
+          prof_action_browse: "ಮ್ಯಾಚ್ಗಳನ್ನು ಬ್ರೌಸ್ ಮಾಡಿ",
+          prof_action_schedule: "ವೇಳಾಪಟ್ಟಿ ನೋಡಿ",
+          prof_action_wallet: "ವಾಲೆಟ್ ತೆರೆಯಿರಿ",
+          prof_action_chat: "ಯಾರಿಗಾದರೂ ಸಂದೇಶ ಕಳುಹಿಸಿ",
+          prof_activity_title: "ಇತ್ತೀಚಿನ ಚಟುವಟಿಕೆ",
+          prof_ratings_title: "ರೇಟಿಂಗ್ ಮತ್ತು ವಿಮರ್ಶೆಗಳು",
+          prof_ratings_empty:
+            "ಇನ್ನೂ ರೇಟಿಂಗ್ ಇಲ್ಲ. ನಿಮ್ಮ ಮೊದಲ ಸೇವೆ ಪೂರ್ಣಗೊಳಿಸಿ.",
+          prof_member_since: "ಸದಸ್ಯರಾದ",
+          prof_services_done: "ಸೇವೆಗಳು ಪೂರ್ಣ",
+          prof_credits_earned: "ಕ್ರೆಡಿಟ್ ಗಳಿಸಿದ",
+          prof_photo_updated: "ಪ್ರೊಫೈಲ್ ಫೋಟೋ ನವೀಕರಿಸಲಾಗಿದೆ ✓",
+          prof_bio_saved: "ಪರಿಚಯ ನವೀಕರಿಸಲಾಗಿದೆ ✓",
+          prof_skill_max: "ಗರಿಷ್ಠ 20 ಕೌಶಲಗಳ ಮಿತಿ",
+        },
+      };
+      let lang = getSession().language || "en",
+        t = (k) => TRANSLATIONS[lang][k] || k;
+      function applyI18n() {
+        document.querySelectorAll("[data-i18n]").forEach((el) => {
+          el.textContent = t(el.getAttribute("data-i18n"));
+        });
+      }
+      (function guard() {
+        const g = $("authGuard"),
+          s = getSession();
+        if (!s || !s.email) {
+          window.location.href = "login.html";
+          return;
+        }
+        initUI(s);
+        g.classList.add("hidden");
+      })();
+      function initUI(s) {
+        if (s.avatar) {
+          $("#avatarImg").src = s.avatar;
+        } else {
+          $("#avatarImg").style.display = "none";
+          $("#avatarOverlay").textContent = s.name
+            ? s.name
+                .split(" ")
+                .map((w) => w[0])
+                .join("")
+                .toUpperCase()
+            : "?";
+        }
+        $("#heroName").textContent = s.name || "—";
+        $("#heroHandle").textContent =
+          "@" + (s.name ? s.name.replace(/\s+/g, "").toLowerCase() : "—");
+        const lvl = s.level || 1;
+        const lvlNames = {
+          1: "Newcomer",
+          2: "Helper",
+          3: "Contributor",
+          4: "Trusted",
+          5: "Expert",
+          6: "Legend",
+        };
+        $("#heroLevel").textContent = `Lv. ${lvl} — ${lvlNames[lvl] || ""}`;
+        if (s.joinDate) {
+          const d = new Date(s.joinDate);
+          $("#heroJoin").textContent =
+            `${t("prof_member_since")} ${d.toLocaleString("default", { month: "long", year: "numeric" })}`;
+        } else {
+          const now = new Date().toISOString();
+          updateSession({ joinDate: now });
+          $("#heroJoin").textContent =
+            `${t("prof_member_since")} ${new Date(now).toLocaleString("default", { month: "long", year: "numeric" })}`;
+        }
+        $("#pillServices").textContent =
+          `${s.completedServices || 0} ${t("prof_services_done")}`;
+        $("#pillCredits").textContent =
+          `${s.credits || 0} ${t("prof_credits_earned")}`;
+        $("#pillTrust").textContent =
+          `${s.trustScore || 0}% ${t("prof_trust_title")}`;
+        $("#creditsDisplay").textContent = s.credits || 0;
+        if (s.bio) {
+          $("#bioText").textContent = s.bio;
+          $("#bioPlaceholder").style.display = "none";
+        } else {
+          $("#bioText").style.display = "none";
+          $("#bioPlaceholder").style.display = "block";
+        }
+        renderSkills(s.skills || [], s.skills_meta || []);
+        $("#walletCredits").textContent = s.credits || 0;
+        $("#walletEscrow").textContent = s.escrow || 0;
+        $("#walletEarned").textContent = s.totalEarned || 0;
+        renderXP(s);
+        renderTrust(s);
+        evaluateBadges(s);
+        renderCalendar(s.availability || {});
+        renderActivity(s.activityLog || []);
+        renderRatings(s);
+        applyI18n();
+        document
+          .querySelectorAll(".fade-up")
+          .forEach((el, i) =>
+            setTimeout(() => el.classList.add("visible"), i * 100),
+          );
+      }
+      $("#avatarOverlay").onclick = () => $("#avatarInput").click();
+      $("#avatarInput").onchange = (e) => {
+        const f = e.target.files[0];
+        if (!f) return;
+        const r = new FileReader();
+        r.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            const c = document.createElement("canvas"),
+              ctx = c.getContext("2d"),
+              size = 256;
+            c.width = c.height = size;
+            const ratio = Math.min(img.width / size, img.height / size);
+            const w = size * ratio,
+              h = size * ratio;
+            const sx = (img.width - w) / 2,
+              sy = (img.height - h) / 2;
+            ctx.drawImage(img, sx, sy, w, h, 0, 0, size, size);
+            const dataURL = c.toDataURL("image/jpeg", 0.85);
+            updateSession({ avatar: dataURL });
+            $("#avatarImg").src = dataURL;
+            $("#avatarImg").style.display = "block";
+            showToast(t("prof_photo_updated"), "success");
+          };
+          img.src = ev.target.result;
+        };
+        r.readAsDataURL(f);
+      };
+      let editMode = false;
+      $("#editProfileBtn").onclick = () => toggleEdit(true);
+      $("#bioEditBtn").onclick = () => toggleEdit(true);
+      $("#bioCancelBtn").onclick = () => toggleEdit(false);
+      $("#bioSaveBtn").onclick = saveBio;
+      function toggleEdit(on) {
+        editMode = on;
+        if (on) {
+          $("#heroName").innerHTML =
+            `<input type="text" id="nameInput" value="${$("#heroName").textContent}" style="font-size:28px;background:none;border:none;color:var(--text);width:100%">`;
+          $("#bioContent").style.display = "none";
+          $("#bioActions").style.display = "flex";
+          $("#bioTextarea").value = getSession().bio || "";
+          $("#bioCharCount").textContent =
+            `${$("#bioTextarea").value.length} / 300`;
+        } else {
+          const sess = getSession();
+          $("#heroName").textContent = sess.name || "—";
+          $("#bioContent").style.display = "block";
+          $("#bioActions").style.display = "none";
+        }
+      }
+      $("#bioTextarea").oninput = (e) => {
+        $("#bioCharCount").textContent = `${e.target.value.length} / 300`;
+      };
+      function saveBio() {
+        const name = $("#nameInput").value.trim();
+        const bio = $("#bioTextarea").value.trim();
+        if (name) updateSession({ name });
+        updateSession({ bio });
+        $("#heroName").textContent = name || "—";
+        $("#bioText").textContent = bio;
+        $("#bioPlaceholder").style.display = bio ? "none" : "block";
+        $("#bioContent").style.display = "block";
+        $("#bioActions").style.display = "none";
+        showToast(t("prof_bio_saved"), "success");
+        evaluateBadges(getSession());
+      }
+      $("#aiGenerateBtn").onclick = openAIModal;
+      function openAIModal() {
+        const m = document.createElement("div");
+        m.style.position = "fixed";
+        m.style.inset = "0";
+        m.style.background = "rgba(0,0,0,0.6)";
+        m.style.display = "flex";
+        m.style.alignItems = "center";
+        m.style.justifyContent = "center";
+        m.innerHTML = `<div style="background:#111827;color:#fff;padding:24px;border-radius:16px;max-width:520px;width:100%;position:relative"><h2>${t("prof_ai_modal_title")}</h2><p>${t("prof_ai_modal_sub")}</p><textarea id="aiPrompt" placeholder="${t("prof_ai_placeholder")}" style="width:100%;height:80px;margin:12px 0;padding:8px;background:#1F2937;color:#fff;border:none;border-radius:8px"></textarea><div style="display:flex;gap:12px"><button id="aiGenBtn" class="btn-primary">${t("prof_ai_generate")}</button><button id="aiCloseBtn" class="btn-primary btn-cancel">✖</button></div><div id="aiResult" style="margin-top:12px;min-height:60px;font-family:monospace;white-space:pre-wrap"></div></div>`;
+        document.body.appendChild(m);
+        $("#aiCloseBtn").onclick = () => m.remove();
+        $("#aiGenBtn").onclick = async () => {
+          const prompt = $("#aiPrompt").value.trim();
+          if (!prompt) {
+            showToast("Enter a prompt", "error");
+            return;
+          }
+          let key = localStorage.getItem("timebankGeminiKey");
+          if (!key) {
+            key = prompt("Enter Gemini API key:");
+            if (!key) {
+              showToast("API key required", "error");
+              return;
+            }
+            localStorage.setItem("timebankGeminiKey", key);
+          }
+          $("#aiGenBtn").disabled = true;
+          $("#aiGenBtn").textContent = "Thinking...";
+          try {
+            const res = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: prompt }] }],
+                }),
+              },
+            );
+            const data = await res.json();
+            const txt = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            const out = $("#aiResult");
+            out.textContent = "";
+            let i = 0;
+            const iv = setInterval(() => {
+              out.textContent += txt[i++] || "";
+              if (i >= txt.length) {
+                clearInterval(iv);
+                $("#aiGenBtn").disabled = false;
+                $("#aiGenBtn").textContent = t("prof_ai_generate");
+              }
+            }, 15);
+            const use = document.createElement("button");
+            use.className = "btn-primary";
+            use.textContent = t("prof_ai_use");
+            use.onclick = () => {
+              document.getElementById("bioTextarea").value = txt;
+              document.getElementById("bioCharCount").textContent =
+                `${txt.length} / 300`;
+              m.remove();
+            };
+            const regen = document.createElement("button");
+            regen.className = "btn-primary btn-cancel";
+            regen.textContent = t("prof_ai_regen");
+            regen.onclick = () => {
+              out.textContent = "";
+              i = 0;
+              clearInterval(iv);
+              $("#aiGenBtn").click();
+            };
+            const btns = document.createElement("div");
+            btns.style.marginTop = "12px";
+            btns.append(use, regen);
+            out.after(btns);
+          } catch (e) {
+            console.error(e);
+            showToast("AI generation failed", "error");
+            $("#aiGenBtn").disabled = false;
+            $("#aiGenBtn").textContent = t("prof_ai_generate");
+          }
+        };
+      }
+      const CATEGORY_MAP = {
+        tech: [
+          "python",
+          "javascript",
+          "react",
+          "coding",
+          "web",
+          "app",
+          "ai",
+          "ml",
+          "data",
+          "sql",
+          "node",
+          "flutter",
+          "android",
+          "ios",
+          "figma",
+          "ui",
+          "ux",
+        ],
+        creative: [
+          "design",
+          "art",
+          "photography",
+          "video",
+          "editing",
+          "writing",
+          "music",
+          "drawing",
+          "illustration",
+          "photoshop",
+          "canva",
+        ],
+        teaching: [
+          "tutoring",
+          "teaching",
+          "math",
+          "physics",
+          "chemistry",
+          "biology",
+          "english",
+          "hindi",
+          "kannada",
+          "coaching",
+          "mentoring",
+        ],
+        trade: [
+          "cooking",
+          "tailoring",
+          "plumbing",
+          "carpentry",
+          "electrical",
+          "repair",
+          "gardening",
+          "cleaning",
+          "driving",
+          "mechanics",
+        ],
+      };
+      const CATEGORY_COLOR = {
+        tech: "var(--primary)",
+        creative: "#8B5CF6",
+        teaching: "var(--secondary)",
+        trade: "#F59E0B",
+        default: "var(--muted)",
+      };
+      function detectCat(skill) {
+        const low = skill.toLowerCase();
+        for (const [c, arr] of Object.entries(CATEGORY_MAP))
+          if (arr.some((k) => low.includes(k))) return c;
+        return "default";
+      }
+      function renderSkills(skills, meta) {
+        const list = $("#skillsList");
+        list.innerHTML = "";
+        skills.forEach((s, i) => {
+          const cat = meta[i]?.category || detectCat(s);
+          const tag = document.createElement("span");
+          tag.className = "skill-tag";
+          tag.style.color = CATEGORY_COLOR[cat];
+          tag.innerHTML = `${s}<span class="skill-remove" data-index="${i}">×</span>`;
+          list.appendChild(tag);
+        });
+        $$(".skill-remove").forEach(
+          (b) =>
+            (b.onclick = (e) => {
+              const idx = e.target.dataset.index;
+              const sess = getSession();
+              sess.skills.splice(idx, 1);
+              sess.skills_meta.splice(idx, 1);
+              updateSession({
+                skills: sess.skills,
+                skills_meta: sess.skills_meta,
+              });
+              renderSkills(sess.skills, sess.skills_meta);
+              evaluateBadges(sess);
+            }),
+        );
+      }
+      $("#skillAddBtn").onclick = () => {
+        $("#skillInput").style.display = "inline-block";
+        $("#skillInput").focus();
+      };
+      $("#skillInput").onkeydown = (e) => {
+        if (e.key === "Enter") {
+          addSkill(e.target.value.trim());
+          e.target.value = "";
+        }
+      };
+      $("#skillInput").onblur = () => {
+        $("#skillInput").style.display = "none";
+      };
+      function addSkill(txt) {
+        if (!txt) return;
+        const sess = getSession();
+        if (sess.skills.includes(txt) || sess.skills.length >= 20) {
+          showToast(t("prof_skill_max"), "error");
+          return;
+        }
+        sess.skills.push(txt);
+        sess.skills_meta.push({ skill: txt, category: detectCat(txt) });
+        updateSession({ skills: sess.skills, skills_meta: sess.skills_meta });
+        renderSkills(sess.skills, sess.skills_meta);
+        evaluateBadges(sess);
+      }
+      function renderXP(s) {
+        $("#xpValue").textContent = s.xp || 0;
+        $("#xpCurrent").textContent = `${s.xp || 0} XP`;
+        $("#xpNext").textContent =
+          `${(s.xpMax || 100) - (s.xp || 0)} XP to next level`;
+        $("#xpFill").style.width =
+          `${Math.min(100, ((s.xp || 0) / (s.xpMax || 100)) * 100)}%`;
+        const lvl = s.level || 1;
+        const lvlNames = {
+          1: "Newcomer",
+          2: "Helper",
+          3: "Contributor",
+          4: "Trusted",
+          5: "Expert",
+          6: "Legend",
+        };
+        $("#xpLevelBadge").textContent = `Lv. ${lvl} — ${lvlNames[lvl] || ""}`;
+      }
+      function renderTrust(s) {
+        const score = s.trustScore || 0;
+        $("#trustScore").textContent = `${score}%`;
+        const circ = $("#trustArc");
+        const r = 50;
+        const c = 2 * Math.PI * r;
+        circ.style.strokeDasharray = c;
+        circ.style.strokeDashoffset = c;
+        setTimeout(() => {
+          circ.style.transition = "stroke-dashoffset 1.2s ease-out";
+          circ.style.strokeDashoffset = `${c * (1 - score / 100)}`;
+        }, 100);
+      }
+      const BADGES = [
+        {
+          id: "profile_complete",
+          icon: "👤",
+          name: "Profile Complete",
+          xp: 20,
+          check: (s) =>
+            s.name && s.bio && s.avatar && s.skills && s.skills.length > 0,
+        },
+        {
+          id: "first_trade",
+          icon: "🤝",
+          name: "First Trade",
+          xp: 100,
+          check: (s) => s.completedServices >= 1,
+        },
+        {
+          id: "skill_master",
+          icon: "⚡",
+          name: "Skill Master",
+          xp: 30,
+          check: (s) => s.skills && s.skills.length >= 5,
+        },
+        {
+          id: "trusted_expert",
+          icon: "🏆",
+          name: "Trusted Expert",
+          xp: 50,
+          check: (s) => s.trustScore >= 80,
+        },
+        {
+          id: "community_supporter",
+          icon: "🌱",
+          name: "Community Supporter",
+          xp: 75,
+          check: (s) => s.completedServices >= 10,
+        },
+        {
+          id: "five_star",
+          icon: "⭐",
+          name: "Five Star",
+          xp: 30,
+          check: (s) =>
+            s.ratingsReceived && s.ratingsReceived.some((r) => r.stars === 5),
+        },
+      ];
+      function evaluateBadges(sess) {
+        const earned = sess.earnedBadges || [];
+        const grid = $("#badgesGrid");
+        grid.innerHTML = "";
+        BADGES.forEach((b) => {
+          const unlocked = b.check(sess);
+          const div = document.createElement("div");
+          div.className = `badge ${unlocked ? "unlocked" : "locked"}`;
+          div.innerHTML = `<div class="badge-icon">${b.icon}</div><div class="badge-name">${b.name}</div><div class="badge-xp">+${b.xp} XP</div>`;
+          if (unlocked && !earned.includes(b.id)) {
+            const overlay = document.createElement("div");
+            overlay.style.position = "fixed";
+            overlay.style.inset = "0";
+            overlay.style.background = "rgba(255,255,255,0.03)";
+            overlay.style.pointerEvents = "none";
+            overlay.style.zIndex = "9999";
+            document.body.appendChild(overlay);
+            div.animate(
+              [
+                { transform: "scale(0.5)", opacity: 0 },
+                { transform: "scale(1.15)", opacity: 1 },
+                { transform: "scale(1)", opacity: 1 },
+              ],
+              { duration: 600, easing: "ease-out" },
+            );
+            setTimeout(() => overlay.remove(), 600);
+            sess.xp = (sess.xp || 0) + b.xp;
+            earned.push(b.id);
+            updateSession({ xp: sess.xp, earnedBadges: earned });
+            renderXP(sess);
+          }
+          grid.appendChild(div);
+          div.title = unlocked ? b.desc : `Unlock: ${b.desc}`;
+        });
+      }
+      const TIME_SLOTS = [
+        "9:00 AM",
+        "11:00 AM",
+        "1:00 PM",
+        "3:00 PM",
+        "5:00 PM",
+        "7:00 PM",
+      ];
+      function renderCalendar(avail) {
+        const grid = $("#calendarGrid");
+        grid.innerHTML = "";
+        const now = new Date();
+        const y = now.getFullYear(),
+          m = now.getMonth();
+        const firstDay = new Date(y, m, 1).getDay();
+        const daysInMonth = new Date(y, m + 1, 0).getDate();
+        ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach((d) => {
+          const c = document.createElement("div");
+          c.className = "cal-day";
+          c.textContent = d;
+          grid.appendChild(c);
+        });
+        for (let i = 0; i < (firstDay + 6) % 7; i++) {
+          const e = document.createElement("div");
+          e.className = "cal-cell";
+          e.style.visibility = "hidden";
+          grid.appendChild(e);
+        }
+        for (let d = 1; d <= daysInMonth; d++) {
+          const dateStr = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+          const cell = document.createElement("div");
+          cell.className = "cal-cell";
+          cell.textContent = d;
+          const cellDate = new Date(y, m, d);
+          if (cellDate < now) cell.classList.add("past");
+          if (avail[dateStr]) {
+            const dot = document.createElement("div");
+            dot.className = "cal-dot";
+            cell.appendChild(dot);
+          }
+          cell.onclick = () => toggleSlots(dateStr, cell);
+          grid.appendChild(cell);
+        }
+        updateCalSummary(avail);
+      }
+      function toggleSlots(dateStr, cell) {
+        const next = cell.nextElementSibling;
+        if (next && next.classList.contains("slot-row")) {
+          next.remove();
+          return;
+        }
+        const row = document.createElement("div");
+        row.className = "slot-row";
+        TIME_SLOTS.forEach((slot) => {
+          const btn = document.createElement("button");
+          btn.className = "slot";
+          btn.textContent = slot;
+          const sess = getSession();
+          const sel = (sess.availability?.[dateStr] || []).includes(slot);
+          if (sel) btn.classList.add("selected");
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            const s = getSession();
+            s.availability = s.availability || {};
+            s.availability[dateStr] = s.availability[dateStr] || [];
+            if (btn.classList.contains("selected")) {
+              s.availability[dateStr] = s.availability[dateStr].filter(
+                (v) => v !== slot,
+              );
+              btn.classList.remove("selected");
+            } else {
+              s.availability[dateStr].push(slot);
+              btn.classList.add("selected");
+            }
+            if (s.availability[dateStr].length === 0)
+              delete s.availability[dateStr];
+            updateSession({ availability: s.availability });
+            renderCalendar(s.availability);
+          };
+          row.appendChild(btn);
+        });
+        cell.after(row);
+      }
+      function updateCalSummary(avail) {
+        const days = Object.keys(avail).length;
+        const upcoming = Object.entries(avail)
+          .sort((a, b) => new Date(a[0]) - new Date(b[0]))
+          .slice(0, 3);
+        let txt = `You have availability on ${days} day${days !== 1 ? "s" : ""} this month.`;
+        if (upcoming.length) {
+          txt +=
+            " Next: " +
+            upcoming
+              .map(([d, slots]) => `${d} (${slots.join(", ")})`)
+              .join(" | ");
+        }
+        $("#calSummary").textContent = txt;
+      }
+      function renderActivity(acts) {
+        const list = $("#timelineList");
+        list.innerHTML = "";
+        if (!acts || acts.length === 0) {
+          const seed = [
+            {
+              type: "profile",
+              msg: "Created your profile",
+              date: getSession().joinDate || new Date().toISOString(),
+              icon: "👤",
+            },
+            {
+              type: "skill",
+              msg: "Added first skill",
+              date: getSession().joinDate || new Date().toISOString(),
+              icon: "⚡",
+            },
+            {
+              type: "badge",
+              msg: "Earned Profile Complete badge",
+              date: getSession().joinDate || new Date().toISOString(),
+              icon: "🏆",
+            },
+          ];
+          acts = seed;
+          updateSession({ activityLog: seed });
+        }
+        acts.forEach((a) => {
+          const it = document.createElement("div");
+          it.className = "timeline-item";
+          it.innerHTML = `<div class="timeline-dot"></div><div class="timeline-content"><div class="timeline-msg">${a.msg}</div><div class="timeline-time">${new Date(a.date).toLocaleDateString()}</div></div>`;
+          list.appendChild(it);
+        });
+      }
+      function renderRatings(s) {
+        $("#avgRating").textContent = (s.ratingsAvg || 0).toFixed(1);
+        const starRow = $("#starRow");
+        starRow.innerHTML = "";
+        const full = Math.floor(s.ratingsAvg || 0);
+        const half = (s.ratingsAvg || 0) - full >= 0.5;
+        for (let i = 0; i < 5; i++) {
+          const sv = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "svg",
+          );
+          sv.setAttribute("viewBox", "0 0 24 24");
+          sv.classList.add("star");
+          if (i < full || (i === full && half)) sv.classList.add("filled");
+          sv.innerHTML =
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>';
+          starRow.appendChild(sv);
+        }
+        $("#ratingCount").textContent =
+          `(${(s.ratingsReceived || []).length} ratings)`;
+        const dist = s.ratingDistribution || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+        const total = Object.values(dist).reduce((a, b) => a + b, 0) || 1;
+        const bars = $("#distBars");
+        bars.innerHTML = "";
+        [5, 4, 3, 2, 1].forEach((st) => {
+          const pct = Math.round(((dist[st] || 0) / total) * 100);
+          const bar = document.createElement("div");
+          bar.className = "dist-bar";
+          bar.innerHTML = `<div class="dist-label">${st} ★</div><div class="dist-track"><div class="dist-fill" style="width:${pct}%"></div></div><div class="dist-percent">${pct}%</div>`;
+          bars.appendChild(bar);
+        });
+        const revList = $("#reviewsList");
+        revList.innerHTML = "";
+        const revs = s.ratingsReceived?.slice(0, 3) || [];
+        if (!revs.length) {
+          revList.textContent = t("prof_ratings_empty");
+          return;
+        }
+        revs.forEach((r) => {
+          const rev = document.createElement("div");
+          rev.className = "review-item";
+          rev.innerHTML = `<div class="review-avatar">${r.reviewer?.[0] || "U"}</div><div class="review-content"><div class="review-name">${r.reviewer || "User"}</div><div class="review-stars">${"★".repeat(r.stars)}${"☆".repeat(5 - r.stars)}</div><div class="review-text">${r.comment || ""}</div><div class="review-date">${new Date(r.date).toLocaleDateString()}</div></div>`;
+          revList.appendChild(rev);
+        });
+      }
+      $$(".action-item").forEach(
+        (it) =>
+          (it.onclick = () => {
+            window.location.href = it.dataset.href;
+          }),
+      );
+      $("#menuToggle").onclick = () => {
+        const sb = $("#sidebar");
+        sb.classList.toggle("open");
+        $("#menuToggle").setAttribute(
+          "aria-expanded",
+          sb.classList.contains("open"),
+        );
+      };
+      $("#userCard").onclick = () =>
+        $("#profileDropdown").classList.toggle("show");
+      $("#ddSignOut").onclick = logout;
+      document.addEventListener("click", (e) => {
+        if (
+          !$("#profileDropdown").contains(e.target) &&
+          !$("#userCard").contains(e.target)
+        )
+          $("#profileDropdown").classList.remove("show");
+      });
+    </script>
+  </body>
+</html>

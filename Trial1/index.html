@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<!-- Firebase SDK loaded via CDN — no bundler required -->
+<html lang="en">
+<!--
+  TIMEBANK AI — AUTH PAGE
+  Sections:
+  1. HEAD (fonts, meta)
+  2. CSS VARIABLES & RESET
+  3. CUSTOM CURSOR
+  4. LEFT PANEL (brand/animations)
+  5. RIGHT PANEL (auth card)
+  6. LOGIN FORM
+  7. REGISTER FORM
+  8. TOAST NOTIFICATION
+  9. SUCCESS OVERLAY
+  10. JAVASCRIPT — Animations, Validation, Toggle, Cursor, Magnetic, Stats
+-->
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>TimeBank AI — Sign In</title>
+<meta name="description" content="TimeBank AI — trade skills with time credits in your community."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ============================================================
+   1. CSS VARIABLES & RESET
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#2563EB;--secondary:#10B981;--accent:#F59E0B;
+  --bg:#0B1220;--surface:#111827;--surface2:#1F2937;
+  --text:#F9FAFB;--muted:#9CA3AF;--footer:#020617;
+  --radius-input:10px;--radius-btn:12px;
+  --transition:all 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;overflow-x:hidden;cursor:none;
+}
+body.mobile-cursor{cursor:auto}
+input,button,select,textarea{font-family:inherit}
+a{color:var(--primary);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Custom scrollbar */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--primary);border-radius:3px}
+
+/* ============================================================
+   2. CUSTOM CURSOR
+   ============================================================ */
+#cursor-dot{
+  position:fixed;width:8px;height:8px;background:var(--primary);
+  border-radius:50%;pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);transition:background 0.2s;
+}
+#cursor-ring{
+  position:fixed;width:24px;height:24px;border:1.5px solid var(--primary);
+  border-radius:50%;pointer-events:none;z-index:9998;
+  transform:translate(-50%,-50%);
+  transition:width 0.25s,height 0.25s,background 0.25s,border-color 0.25s;
+}
+#cursor-ring.hover{width:40px;height:40px;background:rgba(37,99,235,0.1)}
+#cursor-ring.success{border-color:var(--secondary)}
+
+/* ============================================================
+   3. PAGE LAYOUT
+   ============================================================ */
+.page{display:flex;min-height:100vh}
+
+/* ============================================================
+   4. LEFT PANEL
+   ============================================================ */
+.left-panel{
+  width:50%;position:relative;overflow:hidden;
+  background:var(--bg);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:60px 40px;
+  opacity:0;transform:translateX(-20px);
+  animation:slideInLeft 0.6s ease-out 0s forwards;
+}
+@keyframes slideInLeft{to{opacity:1;transform:translateX(0)}}
+
+/* Dot grid overlay */
+.left-panel::before{
+  content:'';position:absolute;inset:0;
+  background-image:radial-gradient(circle,rgba(255,255,255,0.15) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none;z-index:0;
+  animation:dotPulse 4s ease-in-out infinite;
+}
+@keyframes dotPulse{0%,100%{opacity:0.5}50%{opacity:1}}
+
+/* Grid lines overlay */
+.left-panel::after{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.05) 1px,transparent 1px);
+  background-size:80px 80px;
+}
+
+/* Radial glow pulse */
+.glow-pulse{
+  position:absolute;width:600px;height:600px;
+  background:radial-gradient(circle,rgba(37,99,235,0.18) 0%,transparent 70%);
+  border-radius:50%;animation:glowPulse 4s ease-in-out infinite;
+  pointer-events:none;z-index:0;
+}
+@keyframes glowPulse{0%,100%{transform:scale(0.8);opacity:0.6}50%{transform:scale(1.2);opacity:1}}
+
+.left-content{position:relative;z-index:1;text-align:center;width:100%;max-width:480px}
+
+/* Logo */
+.logo-large{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:36px;
+  text-shadow:0 0 30px rgba(37,99,235,0.6);margin-bottom:16px;letter-spacing:-0.5px}
+.logo-time{color:#fff}
+.logo-bank{color:var(--primary)}
+.logo-ai{color:var(--secondary)}
+
+.tagline{font-family:'Inter',sans-serif;color:var(--muted);font-size:15px;
+  margin-bottom:56px;letter-spacing:0.5px}
+
+/* Stat cards */
+.stat-carousel{position:relative;height:110px;margin-bottom:48px}
+.stat-card{
+  position:absolute;inset:0;display:flex;align-items:center;gap:16px;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
+  backdrop-filter:blur(10px);border-radius:16px;padding:20px 24px;
+  opacity:0;transform:scale(0.95);transition:opacity 0.5s,transform 0.5s;
+  pointer-events:none;
+}
+.stat-card.active{opacity:1;transform:scale(1)}
+.stat-icon{font-size:28px}
+.stat-info{display:flex;flex-direction:column;gap:0}
+.stat-number{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;color:#fff}
+.stat-label{font-size:13px;color:var(--muted);margin-top:2px}
+
+/* Social proof */
+.social-proof{
+  display:flex;align-items:center;gap:12px;margin-top:8px;
+  justify-content:center;position:relative;z-index:1;
+}
+.avatar-stack{display:flex}
+.avatar{
+  width:28px;height:28px;border-radius:50%;border:2px solid var(--bg);
+  margin-left:-8px;background:linear-gradient(135deg,var(--primary),var(--secondary));
+}
+.avatar:first-child{margin-left:0;background:linear-gradient(135deg,#8B5CF6,#2563EB)}
+.avatar:nth-child(2){background:linear-gradient(135deg,#F59E0B,#EF4444)}
+.avatar:nth-child(3){background:linear-gradient(135deg,#10B981,#0891B2)}
+.social-text{font-size:13px;color:var(--muted)}
+.social-text strong{color:var(--text)}
+
+.panel-footer{
+  position:absolute;bottom:24px;left:32px;font-size:12px;color:rgba(156,163,175,0.5);
+  z-index:1;
+}
+
+/* ============================================================
+   5. RIGHT PANEL
+   ============================================================ */
+.right-panel{
+  width:50%;background:var(--surface);display:flex;align-items:center;
+  justify-content:center;padding:40px 24px;position:relative;overflow-y:auto;
+}
+
+/* Auth card */
+.auth-card{
+  width:100%;max-width:420px;padding:44px;
+  background:rgba(17,24,39,0.8);backdrop-filter:blur(20px);
+  border:1px solid rgba(37,99,235,0.2);
+  box-shadow:0 0 40px rgba(37,99,235,0.08);border-radius:20px;
+  opacity:0;transform:translateX(30px);
+  animation:slideInRight 0.5s ease-out 0.1s forwards;
+}
+@keyframes slideInRight{to{opacity:1;transform:translateX(0)}}
+
+/* Logo in card */
+.card-logo{
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;
+  margin-bottom:32px;letter-spacing:-0.3px;
+}
+
+/* Form views */
+.form-view{display:none}
+.form-view.active{display:block}
+
+/* Tag */
+.form-tag{
+  font-family:'Inter',sans-serif;font-size:11px;font-weight:500;
+  text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;
+  opacity:0;animation:fadeUp 0.4s ease-out 0.2s forwards;
+}
+.form-heading{
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:28px;color:#fff;
+  margin-bottom:28px;opacity:0;animation:fadeUp 0.4s ease-out 0.2s forwards;
+}
+@keyframes fadeUp{to{opacity:1;transform:translateY(0)}
+  from{opacity:0;transform:translateY(10px)}}
+
+/* ============================================================
+   6. GOOGLE BUTTON
+   ============================================================ */
+.btn-google{
+  width:100%;height:52px;border-radius:var(--radius-btn);
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);
+  color:#fff;font-family:'Inter',sans-serif;font-size:15px;font-weight:500;
+  display:flex;align-items:center;justify-content:center;gap:12px;cursor:none;
+  transition:var(--transition);position:relative;overflow:hidden;
+  opacity:0;animation:fadeUp 0.4s ease-out 0.3s forwards;
+}
+.btn-google:hover{border-color:rgba(37,99,235,0.5);background:rgba(255,255,255,0.08)}
+.btn-google:active{transform:scale(0.99)}
+.btn-google .g-icon{flex-shrink:0}
+.btn-google .btn-spinner{display:none}
+.btn-google.loading .btn-label{display:none}
+.btn-google.loading .btn-spinner{display:block}
+
+/* ============================================================
+   7. DIVIDER
+   ============================================================ */
+.divider{
+  display:flex;align-items:center;gap:12px;margin:20px 0;
+  opacity:0;animation:fadeUp 0.4s ease-out 0.4s forwards;
+}
+.divider-line{flex:1;height:1px;background:rgba(255,255,255,0.1);
+  transform:scaleX(0);transform-origin:left;
+  animation:scaleIn 0.3s ease-out 0.4s forwards;}
+.divider-line:last-child{transform-origin:right}
+@keyframes scaleIn{to{transform:scaleX(1)}}
+.divider-text{font-size:12px;color:var(--muted);white-space:nowrap}
+
+/* ============================================================
+   8. FORM FIELDS
+   ============================================================ */
+.fields-wrap{display:flex;flex-direction:column;gap:20px}
+.field-row{display:flex;gap:16px}
+.field-row .field-group{flex:1}
+.field-group{position:relative;
+  opacity:0;animation:fadeUp 0.4s ease-out forwards;}
+
+.floating-label{
+  position:absolute;left:16px;top:50%;transform:translateY(-50%);
+  font-family:'Inter',sans-serif;font-size:14px;color:var(--muted);
+  transition:var(--transition);pointer-events:none;z-index:1;
+}
+.field-group input:focus ~ .floating-label,
+.field-group input.has-value ~ .floating-label,
+.field-group select:focus ~ .floating-label,
+.field-group select.has-value ~ .floating-label{
+  top:10px;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--primary);transform:translateY(0);
+}
+.field-input{
+  width:100%;height:56px;padding:20px 16px 8px;
+  background:var(--surface2);border:1px solid rgba(55,65,81,1);
+  border-radius:var(--radius-input);color:var(--text);font-size:15px;
+  transition:var(--transition);outline:none;appearance:none;
+}
+.field-input:focus{
+  border-color:var(--primary);
+  box-shadow:0 0 0 3px rgba(37,99,235,0.15);
+}
+.field-input.error{border-color:#EF4444;animation:shake 0.4s ease}
+.field-input.success{border-color:var(--secondary)}
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-4px)}40%{transform:translateX(4px)}
+  60%{transform:translateX(-4px)}80%{transform:translateX(4px)}
+}
+.field-icon{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  cursor:pointer;color:var(--muted);transition:color 0.2s;font-size:18px;
+}
+.field-icon:hover{color:var(--text)}
+.field-icon.success-icon{color:var(--secondary);pointer-events:none}
+.field-error{
+  font-size:12px;color:#EF4444;margin-top:4px;
+  opacity:0;max-height:0;overflow:hidden;transition:opacity 0.2s,max-height 0.2s;
+}
+.field-error.show{opacity:1;max-height:30px}
+
+/* Password strength */
+.strength-wrap{margin-top:8px;display:none}
+.strength-wrap.visible{display:block}
+.strength-bar{display:flex;gap:4px;margin-bottom:4px}
+.strength-seg{height:3px;flex:1;border-radius:2px;background:rgba(255,255,255,0.1);
+  transition:background 0.3s}
+.strength-label{font-size:11px;color:var(--muted);transition:color 0.3s}
+
+/* Custom select */
+.custom-select-wrap{position:relative}
+.custom-select-wrap select{cursor:pointer}
+.custom-select-wrap::after{
+  content:'▾';position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  color:var(--muted);pointer-events:none;font-size:14px;
+}
+
+/* Custom checkbox */
+.checkbox-wrap{display:flex;align-items:flex-start;gap:12px;cursor:pointer}
+.checkbox-wrap input[type=checkbox]{display:none}
+.custom-check{
+  width:20px;height:20px;border-radius:6px;flex-shrink:0;margin-top:1px;
+  border:1.5px solid rgba(255,255,255,0.15);background:var(--surface2);
+  transition:var(--transition);display:flex;align-items:center;justify-content:center;
+}
+.checkbox-wrap input:checked + .custom-check{
+  background:var(--primary);border-color:var(--primary);
+}
+.custom-check svg{opacity:0;transition:opacity 0.2s}
+.checkbox-wrap input:checked + .custom-check svg{opacity:1}
+.checkbox-text{font-size:13px;color:var(--muted);line-height:1.5}
+
+/* Forgot */
+.forgot-row{display:flex;justify-content:flex-end;margin-top:-8px}
+.forgot-link{font-size:13px;color:var(--primary)}
+
+/* ============================================================
+   9. CTA BUTTONS
+   ============================================================ */
+.btn-cta{
+  width:100%;height:54px;border-radius:var(--radius-btn);border:none;
+  color:#fff;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;
+  cursor:none;transition:var(--transition);position:relative;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.btn-cta.primary{background:var(--primary)}
+.btn-cta.primary:hover{background:#1D4ED8;transform:scale(1.01);
+  box-shadow:0 0 20px rgba(37,99,235,0.4)}
+.btn-cta.secondary{background:var(--secondary)}
+.btn-cta.secondary:hover{background:#059669;transform:scale(1.01);
+  box-shadow:0 0 20px rgba(16,185,129,0.4)}
+.btn-cta:active{transform:scale(0.99)!important}
+.btn-cta.loading{pointer-events:none;opacity:0.8}
+.btn-cta .spinner{display:none;width:20px;height:20px;border:2px solid rgba(255,255,255,0.3);
+  border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite}
+.btn-cta.loading .btn-text{display:none}
+.btn-cta.loading .spinner{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Toggle text */
+.toggle-text{text-align:center;font-size:14px;color:var(--muted);margin-top:4px}
+.toggle-text a{color:var(--primary);font-weight:500}
+.toggle-text a:hover{text-decoration:underline}
+
+/* Back btn */
+.back-btn{
+  background:none;border:none;color:var(--muted);font-size:14px;
+  cursor:pointer;display:flex;align-items:center;gap:6px;margin-bottom:20px;
+  transition:color 0.2s;font-family:'Inter',sans-serif;
+}
+.back-btn:hover{color:var(--text)}
+
+/* ============================================================
+   10. TOAST
+   ============================================================ */
+.toast{
+  position:fixed;bottom:32px;right:32px;
+  background:#1F2937;border-left:4px solid var(--secondary);
+  border-radius:10px;padding:14px 20px;font-size:14px;color:var(--text);
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);z-index:10000;
+  opacity:0;transform:translateY(20px);pointer-events:none;
+  transition:opacity 0.3s,transform 0.3s;max-width:300px;
+}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ============================================================
+   11. SUCCESS OVERLAY
+   ============================================================ */
+.success-overlay{
+  position:fixed;inset:0;background:rgba(11,18,32,0.95);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;
+  z-index:9000;opacity:0;pointer-events:none;transition:opacity 0.4s;
+}
+.success-overlay.show{opacity:1;pointer-events:all}
+.success-check{font-size:64px}
+.success-title{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700}
+.success-sub{color:var(--muted);font-size:15px}
+
+/* ============================================================
+   12. RESPONSIVE
+   ============================================================ */
+@media(max-width:1279px){
+  .left-panel{display:none}
+  .right-panel{width:100%;background:var(--bg);
+    position:relative;min-height:100vh;padding:60px 20px;}
+  .right-panel::before{
+    content:'';position:absolute;inset:0;
+    background-image:radial-gradient(circle,rgba(255,255,255,0.08) 1px,transparent 1px);
+    background-size:40px 40px;pointer-events:none;z-index:0;
+  }
+  .auth-card{position:relative;z-index:1;max-width:460px}
+}
+@media(max-width:767px){
+  body.mobile-cursor{cursor:auto}
+  #cursor-dot,#cursor-ring{display:none}
+  .right-panel{padding:32px 0 calc(32px + env(safe-area-inset-bottom));align-items:flex-start}
+  .auth-card{
+    border:none;border-radius:0;background:transparent;backdrop-filter:none;
+    box-shadow:none;padding:32px 20px;max-width:100%;width:100%;
+  }
+  .field-row{flex-direction:column;gap:20px}
+}
+
+/* Reduced motion */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important}
+}
+</style>
+</head>
+<body>
+<!-- Custom cursor -->
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast" role="alert" aria-live="polite"></div>
+
+<!-- Success overlay -->
+<div class="success-overlay" id="successOverlay" aria-live="polite">
+  <div class="success-check">✅</div>
+  <div class="success-title">You're in!</div>
+  <div class="success-sub">Redirecting to your dashboard…</div>
+</div>
+
+<div class="page">
+  <!-- ============================================================
+       LEFT PANEL — Brand / Cinematic side
+       ============================================================ -->
+  <aside class="left-panel" aria-hidden="true">
+    <div class="glow-pulse"></div>
+    <div class="left-content">
+      <!-- Logo -->
+      <div class="logo-large">
+        <span class="logo-time">Time</span><span class="logo-bank">Bank</span><span class="logo-ai"> AI</span>
+      </div>
+      <p class="tagline">Your skills are your currency</p>
+
+      <!-- Rotating stat cards -->
+      <div class="stat-carousel" role="presentation">
+        <div class="stat-card active">
+          <div class="stat-icon">⏱️</div>
+          <div class="stat-info">
+            <div class="stat-number">12,847</div>
+            <div class="stat-label">Hours exchanged</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">👥</div>
+          <div class="stat-info">
+            <div class="stat-number">4,302</div>
+            <div class="stat-label">Members worldwide</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🎯</div>
+          <div class="stat-info">
+            <div class="stat-number">98</div>
+            <div class="stat-label">Skills available</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Social proof -->
+      <div class="social-proof">
+        <div class="avatar-stack">
+          <div class="avatar"></div>
+          <div class="avatar"></div>
+          <div class="avatar"></div>
+        </div>
+        <span class="social-text">Join <strong>4,302 members</strong> already trading</span>
+      </div>
+    </div>
+    <div class="panel-footer">Empowering communities since 2024</div>
+  </aside>
+
+  <!-- ============================================================
+       RIGHT PANEL — Auth forms
+       ============================================================ -->
+  <main class="right-panel">
+    <div class="auth-card" id="authCard">
+      <!-- Card logo -->
+      <div class="card-logo" aria-label="TimeBank AI">
+        <span class="logo-time">Time</span><span class="logo-bank">Bank</span><span class="logo-ai"> AI</span>
+      </div>
+
+      <!-- ===================== LOGIN VIEW ===================== -->
+      <div class="form-view active" id="loginView">
+        <div class="form-tag">Welcome back</div>
+        <h1 class="form-heading">Sign In</h1>
+
+        <!-- Google button -->
+        <button class="btn-google" id="googleBtnLogin" aria-label="Continue with Google" type="button">
+          <svg class="g-icon" width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            <path fill="none" d="M0 0h48v48H0z"/>
+          </svg>
+          <span class="btn-label">Continue with Google</span>
+          <div class="btn-spinner" style="width:20px;height:20px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite"></div>
+        </button>
+
+        <!-- Divider -->
+        <div class="divider" aria-hidden="true">
+          <div class="divider-line"></div>
+          <span class="divider-text">or continue with email</span>
+          <div class="divider-line"></div>
+        </div>
+
+        <!-- Login form -->
+        <form id="loginForm" novalidate>
+          <div class="fields-wrap">
+            <!-- Email -->
+            <div class="field-group" style="animation-delay:0.5s">
+              <input class="field-input" type="email" id="loginEmail" name="email"
+                autocomplete="email" aria-label="Email address"
+                aria-describedby="loginEmailErr"/>
+              <label class="floating-label" for="loginEmail">Email address</label>
+              <div class="field-error" id="loginEmailErr" role="alert"></div>
+            </div>
+            <!-- Password -->
+            <div class="field-group" style="animation-delay:0.55s">
+              <input class="field-input" type="password" id="loginPassword" name="password"
+                autocomplete="current-password" aria-label="Password"
+                aria-describedby="loginPasswordErr"/>
+              <label class="floating-label" for="loginPassword">Password</label>
+              <button type="button" class="field-icon" id="toggleLoginPwd"
+                aria-pressed="false" aria-label="Show password">👁</button>
+              <div class="field-error" id="loginPasswordErr" role="alert"></div>
+            </div>
+            <!-- Forgot -->
+            <div class="forgot-row">
+              <a class="forgot-link" href="#" tabindex="0">Forgot password?</a>
+            </div>
+            <!-- CTA -->
+            <div class="field-group" style="animation-delay:0.7s">
+              <button class="btn-cta primary" type="submit" id="loginBtn" aria-label="Sign in">
+                <span class="btn-text">Sign In</span>
+                <div class="spinner"></div>
+              </button>
+            </div>
+          </div>
+        </form>
+        <p class="toggle-text" style="margin-top:20px">
+          Don't have an account? <a href="#" id="goToRegister">Create one</a>
+        </p>
+      </div>
+
+      <!-- ===================== REGISTER VIEW ===================== -->
+      <div class="form-view" id="registerView">
+        <button class="back-btn" id="backToLogin" type="button" aria-label="Back to sign in">
+          ← Back
+        </button>
+        <div class="form-tag">Join the community</div>
+        <h1 class="form-heading">Create Account</h1>
+
+        <!-- Google button -->
+        <button class="btn-google" id="googleBtnRegister" aria-label="Continue with Google" type="button">
+          <svg class="g-icon" width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            <path fill="none" d="M0 0h48v48H0z"/>
+          </svg>
+          <span class="btn-label">Continue with Google</span>
+          <div class="btn-spinner" style="width:20px;height:20px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite"></div>
+        </button>
+
+        <div class="divider" aria-hidden="true">
+          <div class="divider-line"></div>
+          <span class="divider-text">or continue with email</span>
+          <div class="divider-line"></div>
+        </div>
+
+        <form id="registerForm" novalidate>
+          <div class="fields-wrap">
+            <!-- Name row -->
+            <div class="field-row">
+              <div class="field-group" style="animation-delay:0.5s">
+                <input class="field-input" type="text" id="firstName" name="firstName"
+                  autocomplete="given-name" aria-label="First name" aria-describedby="firstNameErr"/>
+                <label class="floating-label" for="firstName">First name</label>
+                <div class="field-error" id="firstNameErr" role="alert"></div>
+              </div>
+              <div class="field-group" style="animation-delay:0.52s">
+                <input class="field-input" type="text" id="lastName" name="lastName"
+                  autocomplete="family-name" aria-label="Last name" aria-describedby="lastNameErr"/>
+                <label class="floating-label" for="lastName">Last name</label>
+                <div class="field-error" id="lastNameErr" role="alert"></div>
+              </div>
+            </div>
+            <!-- Email -->
+            <div class="field-group" style="animation-delay:0.54s">
+              <input class="field-input" type="email" id="regEmail" name="email"
+                autocomplete="email" aria-label="Email address" aria-describedby="regEmailErr"/>
+              <label class="floating-label" for="regEmail">Email address</label>
+              <div class="field-error" id="regEmailErr" role="alert"></div>
+            </div>
+            <!-- Password + strength -->
+            <div class="field-group" style="animation-delay:0.56s">
+              <input class="field-input" type="password" id="regPassword" name="password"
+                autocomplete="new-password" aria-label="Password" aria-describedby="regPasswordErr"/>
+              <label class="floating-label" for="regPassword">Password</label>
+              <button type="button" class="field-icon" id="toggleRegPwd"
+                aria-pressed="false" aria-label="Show password">👁</button>
+              <div class="field-error" id="regPasswordErr" role="alert"></div>
+              <div class="strength-wrap" id="strengthWrap">
+                <div class="strength-bar">
+                  <div class="strength-seg" id="s1"></div>
+                  <div class="strength-seg" id="s2"></div>
+                  <div class="strength-seg" id="s3"></div>
+                  <div class="strength-seg" id="s4"></div>
+                </div>
+                <div class="strength-label" id="strengthLabel">Enter a password</div>
+              </div>
+            </div>
+            <!-- Confirm password -->
+            <div class="field-group" style="animation-delay:0.58s">
+              <input class="field-input" type="password" id="confirmPassword" name="confirmPassword"
+                autocomplete="new-password" aria-label="Confirm password" aria-describedby="confirmPasswordErr"/>
+              <label class="floating-label" for="confirmPassword">Confirm password</label>
+              <div class="field-error" id="confirmPasswordErr" role="alert"></div>
+            </div>
+            <!-- Skill selector -->
+            <div class="field-group custom-select-wrap" style="animation-delay:0.60s">
+              <select class="field-input" id="skillArea" name="skillArea"
+                aria-label="Primary skill area" aria-describedby="skillAreaErr" style="padding-top:20px;padding-bottom:8px">
+                <option value="" disabled selected></option>
+                <option value="tech">Tech &amp; Development</option>
+                <option value="design">Design</option>
+                <option value="education">Education</option>
+                <option value="home">Home &amp; Repairs</option>
+                <option value="health">Health &amp; Wellness</option>
+                <option value="business">Business</option>
+                <option value="creative">Creative Arts</option>
+                <option value="other">Other</option>
+              </select>
+              <label class="floating-label" for="skillArea">Primary skill area</label>
+              <div class="field-error" id="skillAreaErr" role="alert"></div>
+            </div>
+            <!-- Terms -->
+            <div class="field-group" style="animation-delay:0.62s">
+              <label class="checkbox-wrap">
+                <input type="checkbox" id="terms" name="terms" aria-describedby="termsErr"/>
+                <div class="custom-check">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <span class="checkbox-text">
+                  I agree to the <a href="#" target="_blank" rel="noopener">Terms of Service</a>
+                  and <a href="#" target="_blank" rel="noopener">Privacy Policy</a>
+                </span>
+              </label>
+              <div class="field-error" id="termsErr" role="alert"></div>
+            </div>
+            <!-- CTA -->
+            <div class="field-group" style="animation-delay:0.7s">
+              <button class="btn-cta secondary" type="submit" id="registerBtn" aria-label="Create account">
+                <span class="btn-text">Create Account</span>
+                <div class="spinner"></div>
+              </button>
+            </div>
+          </div>
+        </form>
+        <p class="toggle-text" style="margin-top:20px">
+          Already have an account? <a href="#" id="goToLogin">Sign in</a>
+        </p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Firebase CDN (v9 compat) — must load before inline script -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<!-- Alternate auth UI: login.html -->
+
+<script>
+/* ============================================================
+   JAVASCRIPT — All interactions, animations, validation
+   ============================================================ */
+
+// ── Utility ──────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const isMobile = () => window.innerWidth < 768;
+
+// ── Custom Cursor ─────────────────────────────────────────────
+const dot = $('cursor-dot'), ring = $('cursor-ring');
+let mx=0,my=0,rx=0,ry=0;
+if(!isMobile()){
+  document.addEventListener('mousemove',e=>{
+    mx=e.clientX;my=e.clientY;
+    dot.style.left=mx+'px';dot.style.top=my+'px';
+  });
+  (function animateRing(){
+    rx+=(mx-rx)*0.12;ry+=(my-ry)*0.12;
+    ring.style.left=rx+'px';ring.style.top=ry+'px';
+    requestAnimationFrame(animateRing);
+  })();
+  document.querySelectorAll('button,a,input,select,.checkbox-wrap').forEach(el=>{
+    el.addEventListener('mouseenter',()=>ring.classList.add('hover'));
+    el.addEventListener('mouseleave',()=>ring.classList.remove('hover'));
+  });
+}else{
+  document.body.classList.add('mobile-cursor');
+}
+
+// ── Magnetic buttons ──────────────────────────────────────────
+function initMagnetic(btn){
+  if(isMobile())return;
+  btn.addEventListener('mousemove',e=>{
+    const r=btn.getBoundingClientRect();
+    const cx=r.left+r.width/2,cy=r.top+r.height/2;
+    const dx=e.clientX-cx,dy=e.clientY-cy;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<80){
+      const f=Math.max(0,(80-dist)/80);
+      btn.style.transform=`translate(${dx*f*0.08}px,${dy*f*0.08}px) scale(1.01)`;
+    }
+  });
+  btn.addEventListener('mouseleave',()=>{
+    btn.style.transform='';
+  });
+}
+['googleBtnLogin','googleBtnRegister','loginBtn','registerBtn'].forEach(id=>{
+  const el=$(id);if(el)initMagnetic(el);
+});
+
+// ── Stat card carousel ────────────────────────────────────────
+const statCards=document.querySelectorAll('.stat-card');
+let statIdx=0;
+setInterval(()=>{
+  statCards[statIdx].classList.remove('active');
+  statIdx=(statIdx+1)%statCards.length;
+  statCards[statIdx].classList.add('active');
+},3000);
+
+// ── Toast ─────────────────────────────────────────────────────
+function showToast(msg,color='var(--secondary)'){
+  const t=$('toast');
+  t.textContent=msg;t.style.borderLeftColor=color;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ── Firebase Google Auth (real) ──────────────────────────────
+const firebaseConfig={
+  apiKey:"AIzaSyCcAt3vYjzODzD4LlGVJfppZaKK2FYAgFQ",
+  authDomain:"neurolens2026.firebaseapp.com",
+  projectId:"neurolens2026",
+  storageBucket:"neurolens2026.firebasestorage.app",
+  messagingSenderId:"28952760414",
+  appId:"1:28952760414:web:f25597ee9a8b93dd0264cf",
+  measurementId:"G-0D8V6MKQTE",
+};
+const fbApp=firebase.initializeApp(firebaseConfig);
+const fbAuth=firebase.auth();
+const googleProvider=new firebase.auth.GoogleAuthProvider();
+googleProvider.addScope('email');
+googleProvider.addScope('profile');
+
+async function handleGoogleClick(btn){
+  btn.classList.add('loading');
+  try{
+    const result=await fbAuth.signInWithPopup(googleProvider);
+    const user=result.user;
+    btn.classList.remove('loading');
+    showToast('Welcome, '+user.displayName+'! Redirecting…');
+    $('successOverlay').querySelector('.success-sub').textContent=
+      'Signed in as '+user.email;
+    setTimeout(()=>{
+      $('successOverlay').classList.add('show');
+      setTimeout(()=>window.location.href='dashboard.html', 800);
+    },500);
+  }catch(err){
+    btn.classList.remove('loading');
+    if(err.code==='auth/popup-closed-by-user'){
+      showToast('Sign-in cancelled.','var(--accent)');
+    }else if(err.code==='auth/popup-blocked'){
+      showToast('Pop-up blocked — please allow pop-ups for this site.','#EF4444');
+    }else{
+      showToast('Google sign-in failed: '+err.message,'#EF4444');
+    }
+    console.error('Google Auth error:',err);
+  }
+}
+$('googleBtnLogin').addEventListener('click',()=>handleGoogleClick($('googleBtnLogin')));
+$('googleBtnRegister').addEventListener('click',()=>handleGoogleClick($('googleBtnRegister')));
+
+// ── Floating label + has-value ────────────────────────────────
+document.querySelectorAll('.field-input').forEach(input=>{
+  const update=()=>{
+    if(input.value.trim().length>0) input.classList.add('has-value');
+    else input.classList.remove('has-value');
+  };
+  input.addEventListener('input',update);
+  input.addEventListener('change',update);
+  update();
+});
+
+// ── Show/hide password ────────────────────────────────────────
+function setupToggle(btnId,inputId){
+  const btn=$(btnId),inp=$(inputId);
+  if(!btn||!inp)return;
+  btn.addEventListener('click',()=>{
+    const show=inp.type==='password';
+    inp.type=show?'text':'password';
+    btn.setAttribute('aria-pressed',show?'true':'false');
+    btn.textContent=show?'🙈':'👁';
+  });
+}
+setupToggle('toggleLoginPwd','loginPassword');
+setupToggle('toggleRegPwd','regPassword');
+
+// ── Password strength ──────────────────────────────────────────
+$('regPassword').addEventListener('input',function(){
+  const v=this.value;
+  const wrap=$('strengthWrap');
+  if(!v){wrap.classList.remove('visible');return;}
+  wrap.classList.add('visible');
+  let score=0;
+  if(v.length>=8)score++;
+  if(/[A-Z]/.test(v))score++;
+  if(/[0-9]/.test(v))score++;
+  if(/[^A-Za-z0-9]/.test(v))score++;
+  const colors=['#EF4444','#F97316','#F59E0B','#10B981'];
+  const labels=['Weak','Fair','Good','Strong'];
+  for(let i=1;i<=4;i++){
+    $('s'+i).style.background=i<=score?colors[score-1]:'rgba(255,255,255,0.1)';
+  }
+  $('strengthLabel').textContent=labels[score-1]||'Too short';
+  $('strengthLabel').style.color=colors[score-1]||'var(--muted)';
+});
+
+// ── Confirm password match ─────────────────────────────────────
+$('confirmPassword').addEventListener('input',function(){
+  if(this.value&&this.value!==$('regPassword').value){
+    setError('confirmPassword','confirmPasswordErr','Passwords do not match');
+  }else{
+    clearError('confirmPassword','confirmPasswordErr');
+  }
+});
+
+// ── Validation helpers ─────────────────────────────────────────
+function setError(inputId,errId,msg){
+  const inp=$(inputId),err=$(errId);
+  inp.classList.add('error');inp.classList.remove('success');
+  err.textContent=msg;err.classList.add('show');
+}
+function clearError(inputId,errId){
+  const inp=$(inputId),err=$(errId);
+  inp.classList.remove('error');
+  err.classList.remove('show');
+}
+function setSuccess(inputId){
+  const inp=$(inputId);
+  inp.classList.remove('error');inp.classList.add('success');
+}
+function validateEmail(email){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)}
+function validatePassword(pw){return pw.length>=8&&/[A-Z]/.test(pw)&&/[0-9]/.test(pw)}
+function validateName(n){return n.trim().length>=2&&!/\d/.test(n)}
+
+// ── Login blur validation ──────────────────────────────────────
+$('loginEmail').addEventListener('blur',function(){
+  if(!validateEmail(this.value))setError('loginEmail','loginEmailErr','Please enter a valid email');
+  else{clearError('loginEmail','loginEmailErr');setSuccess('loginEmail');}
+});
+$('loginPassword').addEventListener('blur',function(){
+  if(!this.value)setError('loginPassword','loginPasswordErr','Password is required');
+  else{clearError('loginPassword','loginPasswordErr');setSuccess('loginPassword');}
+});
+
+// ── Register blur validation ───────────────────────────────────
+['firstName','lastName'].forEach(id=>{
+  $(id).addEventListener('blur',function(){
+    if(!validateName(this.value))setError(id,id+'Err','Min 2 characters, no numbers');
+    else{clearError(id,id+'Err');setSuccess(id);}
+  });
+});
+$('regEmail').addEventListener('blur',function(){
+  if(!validateEmail(this.value))setError('regEmail','regEmailErr','Please enter a valid email');
+  else{clearError('regEmail','regEmailErr');setSuccess('regEmail');}
+});
+$('regPassword').addEventListener('blur',function(){
+  if(!validatePassword(this.value))
+    setError('regPassword','regPasswordErr','Min 8 chars, 1 uppercase, 1 number');
+  else{clearError('regPassword','regPasswordErr');setSuccess('regPassword');}
+});
+
+// ── Login submit (Firebase email/password) ─────────────────────
+$('loginForm').addEventListener('submit',async function(e){
+  e.preventDefault();
+  const email=$('loginEmail').value;
+  const pw=$('loginPassword').value;
+  let valid=true;
+  if(!validateEmail(email)){setError('loginEmail','loginEmailErr','Please enter a valid email');valid=false;}
+  else{clearError('loginEmail','loginEmailErr');setSuccess('loginEmail');}
+  if(!pw){setError('loginPassword','loginPasswordErr','Password is required');valid=false;}
+  else{clearError('loginPassword','loginPasswordErr');setSuccess('loginPassword');}
+  if(!valid)return;
+  const btn=$('loginBtn');
+  btn.classList.add('loading');
+  try{
+    const result=await fbAuth.signInWithEmailAndPassword(email,pw);
+    btn.classList.remove('loading');
+    showToast('Welcome back, '+(result.user.displayName||result.user.email)+'!');
+    $('successOverlay').querySelector('.success-sub').textContent='Signed in as '+result.user.email;
+    setTimeout(()=>{
+      $('successOverlay').classList.add('show');
+      setTimeout(()=>{ window.location.href='dashboard.html'; },800);
+    },400);
+  }catch(err){
+    btn.classList.remove('loading');
+    const msgs={
+      'auth/user-not-found':'No account found with that email.',
+      'auth/wrong-password':'Incorrect password. Try again.',
+      'auth/invalid-credential':'Invalid email or password.',
+      'auth/too-many-requests':'Too many attempts. Try again later.',
+    };
+    showToast(msgs[err.code]||('Sign-in error: '+err.message),'#EF4444');
+    setError('loginEmail','loginEmailErr',msgs[err.code]||err.message);
+    console.error('Login error:',err);
+  }
+});
+
+// ── Register submit (Firebase create account) ───────────────────
+$('registerForm').addEventListener('submit',async function(e){
+  e.preventDefault();
+  let valid=true;
+  const checks=[
+    ['firstName','firstNameErr',validateName($('firstName').value),'Min 2 chars, no numbers'],
+    ['lastName','lastNameErr',validateName($('lastName').value),'Min 2 chars, no numbers'],
+    ['regEmail','regEmailErr',validateEmail($('regEmail').value),'Valid email required'],
+    ['regPassword','regPasswordErr',validatePassword($('regPassword').value),'Min 8 chars, 1 uppercase, 1 number'],
+    ['confirmPassword','confirmPasswordErr',$('confirmPassword').value===$('regPassword').value,'Passwords do not match'],
+    ['skillArea','skillAreaErr',$('skillArea').value!=='','Please select a skill area'],
+  ];
+  checks.forEach(([inp,err,ok,msg])=>{
+    if(!ok){setError(inp,err,msg);valid=false;}
+    else{clearError(inp,err);setSuccess(inp);}
+  });
+  if(!$('terms').checked){
+    $('termsErr').textContent='You must agree to the terms';
+    $('termsErr').classList.add('show');valid=false;
+  }else{$('termsErr').classList.remove('show');}
+  if(!valid)return;
+  const btn=$('registerBtn');
+  btn.classList.add('loading');
+  try{
+    const result=await fbAuth.createUserWithEmailAndPassword($('regEmail').value,$('regPassword').value);
+    // Update display name
+    await result.user.updateProfile({
+      displayName:$('firstName').value+' '+$('lastName').value
+    });
+    btn.classList.remove('loading');
+    showToast('Account created! Welcome, '+$('firstName').value+'! 🎉');
+    $('successOverlay').querySelector('.success-sub').textContent='Signed in as '+result.user.email;
+    setTimeout(()=>{
+      $('successOverlay').classList.add('show');
+      setTimeout(()=>{ window.location.href='dashboard.html'; },800);
+    },400);
+  }catch(err){
+    btn.classList.remove('loading');
+    const msgs={
+      'auth/email-already-in-use':'An account with this email already exists.',
+      'auth/weak-password':'Password must be at least 6 characters.',
+      'auth/invalid-email':'Please enter a valid email address.',
+    };
+    showToast(msgs[err.code]||('Registration error: '+err.message),'#EF4444');
+    setError('regEmail','regEmailErr',msgs[err.code]||err.message);
+    console.error('Register error:',err);
+  }
+});
+
+// ── View toggle (login ↔ register) ────────────────────────────
+function switchView(from,to){
+  const fromEl=$(from+'View'),toEl=$(to+'View');
+  fromEl.style.opacity='0';fromEl.style.transform='translateX(-20px)';
+  setTimeout(()=>{
+    fromEl.classList.remove('active');fromEl.style.opacity='';fromEl.style.transform='';
+    toEl.classList.add('active');
+    toEl.style.opacity='0';toEl.style.transform='translateX(20px)';
+    requestAnimationFrame(()=>{
+      toEl.style.transition='opacity 0.25s,transform 0.25s';
+      toEl.style.opacity='1';toEl.style.transform='translateX(0)';
+      setTimeout(()=>{toEl.style.transition='';},300);
+    });
+  },200);
+}
+$('goToRegister').addEventListener('click',e=>{e.preventDefault();switchView('login','register');});
+$('goToLogin').addEventListener('click',e=>{e.preventDefault();switchView('register','login');});
+$('backToLogin').addEventListener('click',()=>switchView('register','login'));
+
+// ── Skill select floating label ───────────────────────────────
+$('skillArea').addEventListener('change',function(){
+  if(this.value)this.classList.add('has-value');
+});
+
+// ── Input focus scroll on mobile ──────────────────────────────
+if(isMobile()){
+  document.querySelectorAll('.field-input').forEach(inp=>{
+    inp.addEventListener('focus',()=>{
+      setTimeout(()=>inp.scrollIntoView({behavior:'smooth',block:'center'}),300);
+    });
+  });
+}
+
+/*
+ * ============================================================
+ * HOW TO CONNECT — Backend Integration Guide
+ * ============================================================
+ *
+ * 1. GOOGLE OAUTH:
+ *    Replace the handleGoogleClick simulation with:
+ *      window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' +
+ *        new URLSearchParams({
+ *          client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+ *          redirect_uri: 'https://yourdomain.com/auth/google/callback',
+ *          response_type: 'code',
+ *          scope: 'openid email profile',
+ *        });
+ *
+ * 2. LOGIN ENDPOINT:
+ *      POST /api/auth/login
+ *      Body: { email, password }
+ *      Response: { token, user } or { error }
+ *
+ * 3. REGISTER ENDPOINT:
+ *      POST /api/auth/register
+ *      Body: { firstName, lastName, email, password, skillArea }
+ *      Response: { token, user } or { error }
+ *
+ * 4. FIREBASE AUTH (if using):
+ *    Import from src/firebase.js and call:
+ *      signInWithEmailAndPassword(auth, email, password)
+ *      createUserWithEmailAndPassword(auth, email, password)
+ *      signInWithPopup(auth, new GoogleAuthProvider())
+ * ============================================================
+ */
+</script>
+</body>
+</html>

@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+  TIMEBANK AI — DASHBOARD
+  Sections:
+  1. HEAD (fonts, meta)
+  2. CSS VARIABLES & RESET
+  3. SIDEBAR
+  4. MAIN CONTENT
+    4a. Top bar
+    4b. Stats cards
+    4c. Activity feed
+    4d. Skill marketplace preview
+  5. MODALS (profile, signout confirm)
+  6. JAVASCRIPT — Firebase auth guard, data rendering, interactions
+-->
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>TimeBank AI — Dashboard</title>
+<meta name="description" content="Your TimeBank AI dashboard — manage time credits, skills, and community trades."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ============================================================
+   1. CSS VARIABLES & RESET
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#2563EB;--primary-light:rgba(37,99,235,0.15);
+  --secondary:#10B981;--accent:#F59E0B;--danger:#EF4444;
+  --bg:#0B1220;--surface:#111827;--surface2:#1F2937;--surface3:#374151;
+  --text:#F9FAFB;--muted:#9CA3AF;--border:rgba(255,255,255,0.07);
+  --sidebar-w:260px;--topbar-h:64px;
+  --radius:12px;--radius-sm:8px;
+  --shadow:0 4px 24px rgba(0,0,0,0.4);
+  --trans:all 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;display:flex;overflow-x:hidden;
+}
+a{color:var(--primary);text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px}
+
+/* ============================================================
+   2. AUTH GUARD OVERLAY
+   ============================================================ */
+#authGuard{
+  position:fixed;inset:0;background:var(--bg);z-index:9999;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;
+}
+#authGuard.hidden{display:none}
+.guard-spinner{
+  width:40px;height:40px;border:3px solid var(--surface3);
+  border-top-color:var(--primary);border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.guard-text{color:var(--muted);font-size:14px}
+
+/* ============================================================
+   3. SIDEBAR
+   ============================================================ */
+.sidebar{
+  width:var(--sidebar-w);min-height:100vh;background:var(--surface);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;
+  padding:24px 0;position:fixed;left:0;top:0;bottom:0;z-index:100;
+  transition:transform 0.3s ease;
+}
+.sidebar-logo{
+  display:flex;align-items:center;gap:10px;padding:0 20px 28px;
+  border-bottom:1px solid var(--border);
+}
+.logo-mark{
+  width:36px;height:36px;background:var(--primary);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;
+  box-shadow:0 0 16px rgba(37,99,235,0.4);
+}
+.logo-text{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px}
+.logo-text span{color:var(--primary)}
+
+.sidebar-section{padding:20px 12px 8px;font-size:10px;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--muted);font-weight:500}
+
+.nav-item{
+  display:flex;align-items:center;gap:12px;padding:11px 16px;margin:2px 8px;
+  border-radius:var(--radius-sm);color:var(--muted);font-size:14px;font-weight:500;
+  transition:var(--trans);cursor:pointer;text-decoration:none;
+}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--primary-light);color:var(--primary)}
+.nav-item.active .nav-icon{color:var(--primary)}
+.nav-icon{font-size:18px;flex-shrink:0;width:20px;text-align:center}
+.nav-badge{
+  margin-left:auto;background:var(--primary);color:#fff;
+  font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;
+}
+
+.sidebar-bottom{
+  margin-top:auto;padding:16px 8px 0;border-top:1px solid var(--border);
+}
+.user-card{
+  display:flex;align-items:center;gap:12px;padding:12px;border-radius:var(--radius-sm);
+  cursor:pointer;transition:var(--trans);
+}
+.user-card:hover{background:var(--surface2)}
+.user-avatar{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;
+  color:#fff;text-transform:uppercase;
+}
+.user-info{flex:1;min-width:0}
+.user-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:11px;color:var(--muted)}
+.user-menu-icon{color:var(--muted);font-size:16px;flex-shrink:0}
+
+/* ============================================================
+   4. MAIN LAYOUT
+   ============================================================ */
+.main-wrap{
+  margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;
+  min-height:100vh;
+}
+
+/* Topbar */
+.topbar{
+  height:var(--topbar-h);background:var(--surface);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;
+  padding:0 28px;gap:16px;position:sticky;top:0;z-index:50;
+}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:18px;flex:1}
+.topbar-search{
+  display:flex;align-items:center;gap:8px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:8px 14px;width:240px;
+}
+.topbar-search input{
+  background:none;border:none;outline:none;color:var(--text);font-size:13px;width:100%;
+}
+.topbar-search input::placeholder{color:var(--muted)}
+.topbar-search-icon{color:var(--muted);font-size:15px;flex-shrink:0}
+
+.topbar-actions{display:flex;align-items:center;gap:10px}
+.icon-btn{
+  width:36px;height:36px;border-radius:var(--radius-sm);background:var(--surface2);
+  border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+  font-size:16px;cursor:pointer;transition:var(--trans);position:relative;
+}
+.icon-btn:hover{background:var(--surface3);border-color:var(--primary)}
+.notif-dot{
+  position:absolute;top:6px;right:6px;width:7px;height:7px;
+  background:var(--primary);border-radius:50%;border:2px solid var(--surface);
+}
+
+/* Credits pill */
+.credits-pill{
+  display:flex;align-items:center;gap:7px;
+  background:var(--primary-light);border:1px solid rgba(37,99,235,0.3);
+  border-radius:99px;padding:6px 14px;font-size:13px;font-weight:600;
+  color:var(--primary);
+}
+.credits-icon{font-size:15px}
+
+/* ============================================================
+   5. PAGE CONTENT
+   ============================================================ */
+.page-content{padding:28px;display:flex;flex-direction:column;gap:28px;flex:1}
+
+/* Welcome banner */
+.welcome-banner{
+  background:linear-gradient(135deg,rgba(37,99,235,0.2) 0%,rgba(16,185,129,0.1) 100%);
+  border:1px solid rgba(37,99,235,0.25);border-radius:var(--radius);
+  padding:24px 28px;display:flex;align-items:center;justify-content:space-between;
+  position:relative;overflow:hidden;
+}
+.welcome-banner::before{
+  content:'';position:absolute;right:-60px;top:-60px;
+  width:200px;height:200px;
+  background:radial-gradient(circle,rgba(37,99,235,0.15) 0%,transparent 70%);
+  border-radius:50%;
+}
+.welcome-text{display:flex;flex-direction:column;justify-content:center}
+.welcome-greeting{font-size:22px;font-family:'Space Grotesk',sans-serif;font-weight:700;margin-bottom:4px}
+.welcome-sub{color:var(--muted);font-size:14px}
+.welcome-cta{
+  background:var(--primary);color:#fff;padding:10px 20px;
+  border-radius:var(--radius-sm);font-size:14px;font-weight:600;
+  display:flex;align-items:center;gap:8px;transition:var(--trans);border:none;cursor:pointer;
+  white-space:nowrap;flex-shrink:0;
+}
+.welcome-cta:hover{background:#1D4ED8;box-shadow:0 0 20px rgba(37,99,235,0.4)}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;display:flex;flex-direction:column;gap:12px;
+  transition:var(--trans);position:relative;overflow:hidden;
+}
+.stat-card:hover{border-color:rgba(37,99,235,0.3);transform:translateY(-2px);box-shadow:var(--shadow)}
+.stat-card::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:var(--card-color,var(--primary));transform:scaleX(0);
+  transform-origin:left;transition:transform 0.3s ease;
+}
+.stat-card:hover::after{transform:scaleX(1)}
+.stat-header{display:flex;align-items:center;justify-content:space-between}
+.stat-icon-wrap{
+  width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-size:18px;background:var(--card-bg,var(--primary-light));
+}
+.stat-change{font-size:12px;font-weight:500;padding:3px 8px;border-radius:99px}
+.stat-change.up{background:rgba(16,185,129,0.15);color:var(--secondary)}
+.stat-change.down{background:rgba(239,68,68,0.15);color:var(--danger)}
+.stat-value{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700}
+.stat-label{font-size:13px;color:var(--muted)}
+
+/* Two-column section */
+.two-col{display:grid;grid-template-columns:1fr 340px;gap:20px}
+
+/* Panel */
+.panel{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.panel-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 20px;border-bottom:1px solid var(--border);
+}
+.panel-title{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600}
+.panel-link{font-size:13px;color:var(--primary);font-weight:500}
+.panel-link:hover{text-decoration:underline}
+.panel-body{padding:16px 20px;flex:1;overflow-y:auto}
+
+/* Activity feed */
+.activity-item{
+  display:flex;align-items:flex-start;gap:14px;padding:12px 0;
+  border-bottom:1px solid var(--border);
+}
+.activity-item:last-child{border-bottom:none}
+.activity-avatar{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--a-from,var(--primary)),var(--a-to,var(--secondary)));
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;
+}
+.activity-text{flex:1;min-width:0}
+.activity-desc{font-size:13px;line-height:1.5}
+.activity-desc strong{font-weight:600}
+.activity-time{font-size:11px;color:var(--muted);margin-top:3px}
+.activity-badge{
+  font-size:11px;font-weight:600;padding:3px 8px;border-radius:99px;flex-shrink:0;
+}
+.badge-earn{background:rgba(16,185,129,0.15);color:var(--secondary)}
+.badge-spend{background:rgba(239,68,68,0.15);color:var(--danger)}
+.badge-pending{background:rgba(245,158,11,0.15);color:var(--accent)}
+
+/* Marketplace cards */
+.market-item{
+  display:flex;align-items:center;gap:12px;padding:12px 0;
+  border-bottom:1px solid var(--border);cursor:pointer;transition:var(--trans);
+}
+.market-item:last-child{border-bottom:none}
+.market-item:hover .market-title{color:var(--primary)}
+.market-icon{
+  width:42px;height:42px;border-radius:10px;flex-shrink:0;font-size:18px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface2);
+}
+.market-info{flex:1;min-width:0}
+.market-title{font-size:13px;font-weight:600;margin-bottom:2px;transition:color 0.2s}
+.market-meta{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.market-dot{width:3px;height:3px;border-radius:50%;background:var(--muted)}
+.market-credits{
+  font-size:12px;font-weight:700;color:var(--primary);
+  background:var(--primary-light);padding:4px 10px;border-radius:99px;flex-shrink:0;
+}
+
+/* Quick actions */
+.quick-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.quick-btn{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px;display:flex;flex-direction:column;align-items:center;gap:8px;
+  cursor:pointer;transition:var(--trans);text-align:center;
+}
+.quick-btn:hover{border-color:var(--primary);background:var(--primary-light)}
+.quick-btn:hover .quick-icon{transform:scale(1.1)}
+.quick-icon{font-size:24px;transition:transform 0.2s}
+.quick-label{font-size:12px;color:var(--muted);font-weight:500;line-height:1.3}
+
+/* Credit chart bar */
+.chart-wrap{padding:4px 0 0;display:flex;flex-direction:column;gap:14px}
+.chart-row{display:flex;align-items:center;gap:10px;font-size:12px}
+.chart-label{width:70px;color:var(--muted);text-align:right;flex-shrink:0}
+.chart-bar-track{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.chart-bar-fill{height:100%;border-radius:4px;transition:width 0.8s cubic-bezier(0.4,0,0.2,1)}
+.chart-val{width:30px;text-align:right;font-weight:600;color:var(--text);flex-shrink:0}
+
+/* ============================================================
+   6. PROFILE DROPDOWN
+   ============================================================ */
+.profile-dropdown{
+  position:fixed;bottom:80px;left:8px;width:240px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow);z-index:200;overflow:hidden;
+  opacity:0;transform:translateY(10px) scale(0.97);pointer-events:none;
+  transition:opacity 0.2s,transform 0.2s;
+}
+.profile-dropdown.show{opacity:1;transform:none;pointer-events:all}
+.dropdown-item{
+  display:flex;align-items:center;gap:11px;padding:11px 16px;
+  font-size:13px;color:var(--text);cursor:pointer;transition:background 0.15s;
+}
+.dropdown-item:hover{background:var(--surface3)}
+.dropdown-item.danger{color:var(--danger)}
+.dropdown-icon{font-size:15px;width:18px;text-align:center}
+.dropdown-divider{height:1px;background:var(--border);margin:4px 0}
+
+/* ============================================================
+   7. TOAST
+   ============================================================ */
+.toast{
+  position:fixed;bottom:28px;right:28px;
+  background:var(--surface2);border-left:4px solid var(--secondary);
+  border-radius:10px;padding:14px 20px;font-size:13px;color:var(--text);
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);z-index:10000;
+  opacity:0;transform:translateY(20px);pointer-events:none;
+  transition:opacity 0.3s,transform 0.3s;max-width:300px;
+}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ============================================================
+   8. RESPONSIVE
+   ============================================================ */
+@media(max-width:1200px){
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .two-col{grid-template-columns:1fr}
+  .quick-actions{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main-wrap{margin-left:0}
+  .topbar{padding:0 16px}
+  .page-content{padding:16px}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .welcome-cta{display:none}
+  .topbar-search{display:none}
+  #menuToggle{display:flex}
+}
+@media(max-width:540px){
+  .stats-grid{grid-template-columns:1fr}
+  .quick-actions{grid-template-columns:repeat(2,1fr)}
+}
+#menuToggle{display:none;align-items:center;justify-content:center;
+  width:36px;height:36px;border-radius:var(--radius-sm);background:var(--surface2);
+  border:1px solid var(--border);font-size:18px;flex-shrink:0}
+
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp 0.4s ease-out forwards;opacity:0}
+.delay-1{animation-delay:0.05s}
+.delay-2{animation-delay:0.1s}
+.delay-3{animation-delay:0.15s}
+.delay-4{animation-delay:0.2s}
+.delay-5{animation-delay:0.25s}
+.delay-6{animation-delay:0.3s}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important}
+}
+</style>
+</head>
+<body>
+
+<!-- Auth guard — shown while Firebase resolves user session -->
+<div id="authGuard" role="status" aria-live="polite">
+  <div class="guard-spinner"></div>
+  <p class="guard-text">Checking session…</p>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast" role="alert" aria-live="polite"></div>
+
+<!-- Profile dropdown -->
+<div class="profile-dropdown" id="profileDropdown" role="menu">
+  <div class="dropdown-item" id="ddProfile" role="menuitem" tabindex="0">
+    <span class="dropdown-icon">👤</span> View Profile
+  </div>
+  <div class="dropdown-item" role="menuitem" tabindex="0">
+    <span class="dropdown-icon">⚙️</span> Settings
+  </div>
+  <div class="dropdown-item" role="menuitem" tabindex="0">
+    <span class="dropdown-icon">🎁</span> Refer a Friend
+  </div>
+  <div class="dropdown-divider"></div>
+  <div class="dropdown-item danger" id="ddSignOut" role="menuitem" tabindex="0">
+    <span class="dropdown-icon">↩</span> Sign Out
+  </div>
+</div>
+
+<!-- =============================================================
+     SIDEBAR
+     ============================================================= -->
+<aside class="sidebar" id="sidebar" aria-label="Navigation">
+  <!-- Logo -->
+  <div class="sidebar-logo">
+    <div class="logo-mark">⏱</div>
+    <div class="logo-text">Time<span>Bank</span> AI</div>
+  </div>
+
+  <div class="sidebar-section">Main</div>
+  <a href="dashboard.html" class="nav-item active" id="navDashboard" aria-current="page">
+    <span class="nav-icon">🏠</span> Dashboard
+  </a>
+  <a href="#" class="nav-item" id="navMarket">
+    <span class="nav-icon">🛒</span> Marketplace
+    <span class="nav-badge">12</span>
+  </a>
+  <a href="#" class="nav-item" id="navExchanges">
+    <span class="nav-icon">🔄</span> My Exchanges
+  </a>
+  <a href="#" class="nav-item" id="navCredits">
+    <span class="nav-icon">💎</span> Credits
+  </a>
+
+  <div class="sidebar-section">Community</div>
+  <a href="#" class="nav-item" id="navMembers">
+    <span class="nav-icon">👥</span> Members
+  </a>
+  <a href="#" class="nav-item" id="navSkills">
+    <span class="nav-icon">🎯</span> Skills
+  </a>
+  <a href="#" class="nav-item" id="navMessages">
+    <span class="nav-icon">💬</span> Messages
+    <span class="nav-badge">3</span>
+  </a>
+
+  <div class="sidebar-section">Account</div>
+  <a href="#" class="nav-item" id="navSettings">
+    <span class="nav-icon">⚙️</span> Settings
+  </a>
+
+  <div class="sidebar-bottom">
+    <div class="user-card" id="userCard" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-label="User menu">
+      <div class="user-avatar" id="userAvatarSidebar">?</div>
+      <div class="user-info">
+        <div class="user-name" id="userNameSidebar">Loading…</div>
+        <div class="user-role" id="userRoleSidebar">TimeBank Member</div>
+      </div>
+      <span class="user-menu-icon">⋯</span>
+    </div>
+  </div>
+</aside>
+
+<!-- =============================================================
+     MAIN CONTENT
+     ============================================================= -->
+<div class="main-wrap" id="mainWrap">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <button class="icon-btn" id="menuToggle" aria-label="Toggle sidebar" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <h1 class="topbar-title">Dashboard</h1>
+    <div class="topbar-search" role="search">
+      <span class="topbar-search-icon">🔍</span>
+      <input type="search" id="searchInput" placeholder="Search skills, members…" aria-label="Search skills and members"/>
+    </div>
+    <div class="topbar-actions">
+      <div class="credits-pill" id="creditsPill" aria-label="Time credits balance">
+        <span class="credits-icon">⏱</span>
+        <span id="creditsDisplay">—</span> credits
+      </div>
+      <button class="icon-btn" id="notifBtn" aria-label="Notifications" aria-haspopup="true">
+        🔔
+        <span class="notif-dot"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Page content -->
+  <main class="page-content" id="pageContent" aria-label="Dashboard content">
+
+    <!-- Welcome banner -->
+    <div class="welcome-banner fade-up delay-1">
+      <div class="welcome-text">
+        <div class="welcome-greeting" id="welcomeGreeting">Good morning! 👋</div>
+        <div class="welcome-sub">Here's what's happening with your TimeBank account today.</div>
+      </div>
+      <button class="welcome-cta" id="listSkillBtn" aria-label="List a new skill">
+        + List a Skill
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid fade-up delay-2" role="region" aria-label="Account statistics">
+      <div class="stat-card" style="--card-color:var(--primary);--card-bg:rgba(37,99,235,0.12)">
+        <div class="stat-header">
+          <div class="stat-icon-wrap">⏱</div>
+          <span class="stat-change up" id="statCreditsChange">+2.4%</span>
+        </div>
+        <div class="stat-value" id="statCredits">—</div>
+        <div class="stat-label">Time Credits</div>
+      </div>
+      <div class="stat-card" style="--card-color:var(--secondary);--card-bg:rgba(16,185,129,0.12)">
+        <div class="stat-header">
+          <div class="stat-icon-wrap">🤝</div>
+          <span class="stat-change up">+1 this week</span>
+        </div>
+        <div class="stat-value" id="statExchanges">7</div>
+        <div class="stat-label">Completed Exchanges</div>
+      </div>
+      <div class="stat-card" style="--card-color:var(--accent);--card-bg:rgba(245,158,11,0.12)">
+        <div class="stat-header">
+          <div class="stat-icon-wrap">⭐</div>
+          <span class="stat-change up">4.9 avg</span>
+        </div>
+        <div class="stat-value" id="statRating">4.9</div>
+        <div class="stat-label">Your Rating</div>
+      </div>
+      <div class="stat-card" style="--card-color:#8B5CF6;--card-bg:rgba(139,92,246,0.12)">
+        <div class="stat-header">
+          <div class="stat-icon-wrap">🎯</div>
+          <span class="stat-change up">Active</span>
+        </div>
+        <div class="stat-value" id="statSkills">3</div>
+        <div class="stat-label">Skills Listed</div>
+      </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="quick-actions fade-up delay-3" role="region" aria-label="Quick actions">
+      <button class="quick-btn" id="qPost" aria-label="Post a service">
+        <span class="quick-icon">📝</span>
+        <span class="quick-label">Post a Service</span>
+      </button>
+      <button class="quick-btn" id="qRequest" aria-label="Request help">
+        <span class="quick-icon">🙋</span>
+        <span class="quick-label">Request Help</span>
+      </button>
+      <button class="quick-btn" id="qTransfer" aria-label="Transfer credits">
+        <span class="quick-icon">💸</span>
+        <span class="quick-label">Transfer Credits</span>
+      </button>
+      <button class="quick-btn" id="qFind" aria-label="Find skills near you">
+        <span class="quick-icon">🗺️</span>
+        <span class="quick-label">Find Near Me</span>
+      </button>
+    </div>
+
+    <!-- Two-column: activity + marketplace -->
+    <div class="two-col fade-up delay-4">
+      <!-- Activity feed -->
+      <div class="panel" role="region" aria-label="Recent activity">
+        <div class="panel-header">
+          <div class="panel-title">Recent Activity</div>
+          <a href="#" class="panel-link" id="viewAllActivity">View all</a>
+        </div>
+        <div class="panel-body" id="activityFeed">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+
+      <!-- Right column -->
+      <div style="display:flex;flex-direction:column;gap:20px">
+
+        <!-- Credits mini-chart -->
+        <div class="panel" role="region" aria-label="Credits breakdown">
+          <div class="panel-header">
+            <div class="panel-title">Credits Breakdown</div>
+          </div>
+          <div class="panel-body">
+            <div class="chart-wrap" id="creditChart">
+              <!-- Injected by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Marketplace preview -->
+        <div class="panel" role="region" aria-label="Marketplace preview">
+          <div class="panel-header">
+            <div class="panel-title">Hot Skills</div>
+            <a href="#" class="panel-link" id="viewMarket">Browse all</a>
+          </div>
+          <div class="panel-body" id="marketList">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Firebase CDN v9 compat -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+/* ============================================================
+   DASHBOARD JAVASCRIPT
+   ============================================================ */
+
+// ── Utility ──────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+// ── Firebase init (same project as index.html / login.html) ──
+const firebaseConfig = {
+  apiKey:            "AIzaSyCcAt3vYjzODzD4LlGVJfppZaKK2FYAgFQ",
+  authDomain:        "neurolens2026.firebaseapp.com",
+  projectId:         "neurolens2026",
+  storageBucket:     "neurolens2026.firebasestorage.app",
+  messagingSenderId: "28952760414",
+  appId:             "1:28952760414:web:f25597ee9a8b93dd0264cf",
+  measurementId:     "G-0D8V6MKQTE",
+};
+const fbApp  = firebase.initializeApp(firebaseConfig);
+const fbAuth = firebase.auth();
+const db     = firebase.firestore();
+
+// ── Auth guard — redirect to index.html if not signed in ─────
+fbAuth.onAuthStateChanged(async user => {
+  const guard = $('authGuard');
+  if (!user) {
+    // Not authenticated — send to auth page
+    window.location.href = 'index.html';
+    return;
+  }
+  
+  try {
+    // Authenticated — ensure data exists, then populate
+    await initUserData(user);
+  } catch (err) {
+    console.error("Firestore Init Error:", err);
+    showToast("Database error. Please ensure Firestore is created and rules are public.", "var(--danger)");
+  }
+
+  try {
+    populateDashboard(user);
+  } catch (err) {
+    console.error("Dashboard Populate Error:", err);
+  }
+
+  // Always hide guard so user doesn't get stuck
+  guard.classList.add('hidden');
+});
+
+// ── Toast helper ──────────────────────────────────────────────
+function showToast(msg, color = 'var(--secondary)') {
+  const t = $('toast');
+  t.textContent = msg;
+  t.style.borderLeftColor = color;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ── Greeting by time of day ───────────────────────────────────
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
+// ── Data Seeder (Ensures UI is never empty on first login) ───
+async function initUserData(user) {
+  const userRef = db.collection('users').doc(user.uid);
+  const docSnap = await userRef.get();
+  
+  // If user document doesn't exist, create it with starter data
+  if (!docSnap.exists) {
+    console.log("First time login: Seeding starter database records...");
+    const displayName = user.displayName || user.email.split('@')[0];
+    
+    // 1. Create User Doc
+    await userRef.set({
+      uid: user.uid,
+      name: displayName,
+      email: user.email,
+      credits: 24,
+      earned: 31,
+      spent: 7,
+      pending: 3,
+      exchanges: 7,
+      rating: 4.9,
+      skillsCount: 3,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // 2. Seed Initial Activity specific to this user
+    const batch = db.batch();
+    const mockActivities = [
+      { uid: user.uid, initials:'SK', from:'#8B5CF6', to:'#2563EB', desc:'<strong>Sara K.</strong> completed tutoring session with you', time:'2 hours ago', badge:'badge-earn', badgeText:'+3 credits', timestamp: Date.now() },
+      { uid: user.uid, initials:'JM', from:'#F59E0B', to:'#EF4444', desc:'You sent <strong>James M.</strong> credits for home repairs', time:'Yesterday', badge:'badge-spend', badgeText:'−2 credits', timestamp: Date.now()-86400000 },
+      { uid: user.uid, initials:'AI', from:'#10B981', to:'#0891B2', desc:'AI matched you with <strong>Alex I.</strong> for Spanish lessons', time:'2 days ago', badge:'badge-pending', badgeText:'Pending', timestamp: Date.now()-172800000 }
+    ];
+    mockActivities.forEach(act => {
+      const newRef = db.collection('activity').doc();
+      batch.set(newRef, act);
+    });
+    
+    // 3. Seed Global Marketplace Data if empty
+    const marketSnap = await db.collection('market').limit(1).get();
+    if (marketSnap.empty) {
+      const mockMarket = [
+        { icon:'🌐', title:'Web Development', provider:'Dev · 4.8 ★', category:'Tech', credits:'4 credits/hr', timestamp: Date.now() },
+        { icon:'🎨', title:'Logo Design', provider:'Creative · 4.7 ★', category:'Design', credits:'3 credits/hr', timestamp: Date.now()-1000 },
+        { icon:'📚', title:'Maths Tutoring', provider:'Education · 5.0 ★', category:'Education', credits:'2 credits/hr', timestamp: Date.now()-2000 },
+        { icon:'🏠', title:'Furniture Assembly', provider:'Home · 4.6 ★', category:'Home', credits:'2 credits/hr', timestamp: Date.now()-3000 }
+      ];
+      mockMarket.forEach(item => {
+        const newRef = db.collection('market').doc();
+        batch.set(newRef, item);
+      });
+    }
+    await batch.commit();
+  }
+}
+
+// ── Populate dashboard using Realtime Firestore Listeners ─────
+const CHART_MAX = 40;
+
+function populateDashboard(user) {
+  // Derive display name & initials for Sidebar
+  const displayName = user.displayName || user.email.split('@')[0];
+  const initials    = displayName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+
+  $('userNameSidebar').textContent  = displayName;
+  $('userAvatarSidebar').textContent = initials;
+  $('welcomeGreeting').textContent = `${getGreeting()}, ${displayName.split(' ')[0]}! 👋`;
+
+  // 1. Listen to Real-time User Stats
+  db.collection('users').doc(user.uid).onSnapshot(doc => {
+    if (doc.exists) {
+      const data = doc.data();
+      // Update header
+      $('creditsDisplay').textContent = data.credits || 0;
+      // Update cards
+      $('statCredits').textContent    = data.credits || 0;
+      $('statExchanges').textContent  = data.exchanges || 0;
+      $('statRating').textContent     = data.rating || 'New';
+      $('statSkills').textContent     = data.skillsCount || 0;
+      
+      // Update Chart Breakdown
+      renderChart(data);
+    }
+  });
+
+  // 2. Listen to Real-time Activity Feed
+  db.collection('activity')
+    .where('uid', '==', user.uid)
+    .orderBy('timestamp', 'desc')
+    .limit(5)
+    .onSnapshot(snapshot => {
+      const acts = snapshot.docs.map(d => d.data());
+      renderActivity(acts);
+    });
+
+  // 3. Listen to Real-time Marketplace
+  db.collection('market')
+    .orderBy('timestamp', 'desc')
+    .limit(4)
+    .onSnapshot(snapshot => {
+      const marketItems = snapshot.docs.map(d => d.data());
+      renderMarket(marketItems);
+    });
+}
+
+function renderActivity(activities) {
+  const feed = $('activityFeed');
+  if (activities.length === 0) {
+    feed.innerHTML = '<div style="color:var(--muted);font-size:13px;">No recent activity.</div>';
+    return;
+  }
+  feed.innerHTML = activities.map(item => `
+    <div class="activity-item">
+      <div class="activity-avatar" style="--a-from:${item.from};--a-to:${item.to}">${item.initials}</div>
+      <div class="activity-text">
+        <div class="activity-desc">${item.desc}</div>
+        <div class="activity-time">${item.time}</div>
+      </div>
+      ${item.badge ? `<span class="activity-badge ${item.badge}">${item.badgeText}</span>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderMarket(items) {
+  const list = $('marketList');
+  if (items.length === 0) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:13px;">Marketplace is empty.</div>';
+    return;
+  }
+  list.innerHTML = items.map(item => `
+    <div class="market-item" role="listitem" tabindex="0">
+      <div class="market-icon">${item.icon}</div>
+      <div class="market-info">
+        <div class="market-title">${item.title}</div>
+        <div class="market-meta">
+          <span>${item.provider}</span>
+          <span class="market-dot"></span>
+          <span>${item.category}</span>
+        </div>
+      </div>
+      <span class="market-credits">${item.credits}</span>
+    </div>
+  `).join('');
+}
+
+function renderChart(userData) {
+  const chart = $('creditChart');
+  const chartData = [
+    { label:'Earned', value: userData.earned || 0, color:'var(--secondary)' },
+    { label:'Spent',  value: userData.spent || 0,  color:'var(--danger)' },
+    { label:'Balance',value: userData.credits || 0, color:'var(--primary)' },
+    { label:'Pending',value: userData.pending || 0,  color:'var(--accent)' }
+  ];
+
+  chart.innerHTML = chartData.map(row => `
+    <div class="chart-row">
+      <div class="chart-label">${row.label}</div>
+      <div class="chart-bar-track">
+        <div class="chart-bar-fill"
+          style="width:0%;background:${row.color}"
+          data-target="${Math.min(100, Math.round(row.value/CHART_MAX*100))}%">
+        </div>
+      </div>
+      <div class="chart-val">${row.value}</div>
+    </div>
+  `).join('');
+  
+  // Animate bars
+  setTimeout(() => {
+    chart.querySelectorAll('.chart-bar-fill').forEach(bar => {
+      bar.style.width = bar.dataset.target;
+    });
+  }, 100);
+}
+
+// ── User card / profile dropdown ──────────────────────────────
+const userCard        = $('userCard');
+const profileDropdown = $('profileDropdown');
+
+function toggleDropdown(open) {
+  profileDropdown.classList.toggle('show', open);
+  userCard.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+userCard.addEventListener('click', () =>
+  toggleDropdown(!profileDropdown.classList.contains('show'))
+);
+userCard.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    toggleDropdown(!profileDropdown.classList.contains('show'));
+  }
+});
+document.addEventListener('click', e => {
+  if (!userCard.contains(e.target) && !profileDropdown.contains(e.target)) {
+    toggleDropdown(false);
+  }
+});
+
+// ── Sign out ──────────────────────────────────────────────────
+$('ddSignOut').addEventListener('click', async () => {
+  toggleDropdown(false);
+  try {
+    await fbAuth.signOut();
+    showToast('Signed out successfully. See you soon!');
+    setTimeout(() => window.location.href = 'index.html', 1200);
+  } catch (err) {
+    showToast('Sign-out failed: ' + err.message, 'var(--danger)');
+  }
+});
+$('ddSignOut').addEventListener('keydown', e => {
+  if (e.key === 'Enter') $('ddSignOut').click();
+});
+
+// ── Mobile sidebar toggle ─────────────────────────────────────
+const menuToggle = $('menuToggle');
+const sidebar    = $('sidebar');
+
+menuToggle.addEventListener('click', () => {
+  const open = sidebar.classList.toggle('open');
+  menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+});
+document.addEventListener('click', e => {
+  if (window.innerWidth <= 900
+      && sidebar.classList.contains('open')
+      && !sidebar.contains(e.target)
+      && !menuToggle.contains(e.target)) {
+    sidebar.classList.remove('open');
+    menuToggle.setAttribute('aria-expanded', 'false');
+  }
+});
+
+// ── Nav highlight helper ──────────────────────────────────────
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', function(e) {
+    if (this.getAttribute('href') === '#') {
+      e.preventDefault();
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      this.classList.add('active');
+      showToast('Coming soon — this section is under construction.', 'var(--accent)');
+    }
+  });
+});
+
+// ── Quick action stubs ────────────────────────────────────────
+['qPost','qRequest','qTransfer','qFind'].forEach(id => {
+  $(id).addEventListener('click', () =>
+    showToast('This feature is coming soon! 🚀', 'var(--accent)')
+  );
+});
+
+// ── Welcome CTA ───────────────────────────────────────────────
+$('listSkillBtn').addEventListener('click', () =>
+  showToast('Skill listing form coming soon! 🎯', 'var(--accent)')
+);
+
+// ── Notification stub ─────────────────────────────────────────
+$('notifBtn').addEventListener('click', () =>
+  showToast('You have 3 new messages and 2 pending exchanges.', 'var(--primary)')
+);
+
+// ── Market item keyboard access ───────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.target.classList.contains('market-item') && e.key === 'Enter') {
+    showToast(`Viewing: ${e.target.querySelector('.market-title').textContent}`, 'var(--primary)');
+  }
+});
+</script>
+</body>
+</html>
